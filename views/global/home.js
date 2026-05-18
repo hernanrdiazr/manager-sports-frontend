@@ -39,10 +39,10 @@ export default {
           <!-- Glassmorphism Card -->
           <div class="inline-block rounded-3xl p-10 sm:p-14" style="background: rgba(255,255,255,0.07); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 60px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.1);">
             <p class="text-slate-300 mb-6 text-sm" style="font-weight: 500">Únete al equipo de <span class="text-white" style="font-weight: 700">fanáticos</span> que ya usan Olympia</p>
-            <button @click="test" class="group inline-flex items-center gap-3 text-white px-10 py-4 rounded-full transition-all duration-300 hover:scale-105" style="background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%); box-shadow: 0 6px 30px rgba(37,99,235,0.5); font-size: 1rem; font-weight: 700;">
+            <router-link to="/register" class="group inline-flex items-center gap-3 text-white px-10 py-4 rounded-full transition-all duration-300 hover:scale-105 cursor-pointer" style="background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%); box-shadow: 0 6px 30px rgba(37,99,235,0.5); font-size: 1rem; font-weight: 700;">
               Registrarse ahora
               <arrow-right class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1"></arrow-right>
-            </button>
+            </router-link>
             <div class="flex items-center justify-center gap-6 mt-6">
               <div v-for="benefit in benefits" :key="benefit.label" class="flex items-center gap-1.5 text-slate-400 text-xs" style="font-weight: 500">
                 <component :is="benefit.icon" class="w-3.5 h-3.5 text-[#06B6D4]" :stroke-width="2"></component>
@@ -130,13 +130,13 @@ export default {
         <p class="text-slate-500 mb-10" style="line-height: 1.75">
           Crea tu cuenta gratis y empieza a disfrutar de los mejores eventos deportivos sin complicaciones.
         </p>
-        <button
-          class="group inline-flex items-center gap-3 text-white px-12 py-5 rounded-full transition-all duration-300 hover:scale-105"
+        <router-link to="/register"
+          class="group inline-flex items-center gap-3 text-white px-12 py-5 rounded-full transition-all duration-300 hover:scale-105 cursor-pointer"
           style="background: linear-gradient(135deg, #2563EB 0%, #1d4ed8 100%); box-shadow: 0 6px 30px rgba(37,99,235,0.4); font-size: 1rem; font-weight: 700;"
         >
           Registrarse ahora
           <arrow-right class="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-        </button>
+        </router-link>
       </div>
     </section>
     </div>
