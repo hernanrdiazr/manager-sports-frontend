@@ -290,7 +290,7 @@ export default {
     validarFormulario() {
       // Limpiar errores anteriores
       this.errores.correo = '';
-      this.errores.clave  = '';
+      this.errores.clave = '';
       let formularioValido = true;
 
       // Validar campo correo
@@ -319,7 +319,7 @@ export default {
      * Gestiona el envío del formulario de inicio de sesión.
      * Ejecuta validación previa y simula la llamada a la API de autenticación.
      */
-     async manejarLogin() {
+    async manejarLogin() {
       // Limpiar mensajes globales previos
       this.mensajeError = '';
       this.mensajeExito = '';
@@ -369,8 +369,8 @@ export default {
         this.campoActivo = 'correo';
         return;
       }
-      this.mensajeError  = '';
-      this.mensajeExito  = `Se han enviado instrucciones de recuperación a: ${this.correo}`;
+      this.mensajeError = '';
+      this.mensajeExito = `Se han enviado instrucciones de recuperación a: ${this.correo}`;
 
       // Aquí iría la llamada real al endpoint de recuperación:
       // await api.recuperarClave(this.correo);

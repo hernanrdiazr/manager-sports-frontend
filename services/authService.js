@@ -4,21 +4,21 @@ import { api } from './api.js';
 class AuthService {
     async login(email, password, requireAdmin = false) {
         try {
-            const response = await api.post('/login', { 
-                email, 
-                password 
+            const response = await api.post('/login', {
+                email,
+                password
             });
-            
+
             // La respuesta debe incluir token y user
             if (response.token && response.user) {
                 // Verificar si se requiere admin
                 if (requireAdmin && response.user.role !== 'admin') {
                     throw new Error('Acceso denegado. Solo administradores.');
                 }
-                
+
                 localStorage.setItem('token', response.token);
                 localStorage.setItem('user', JSON.stringify(response.user));
-                
+
                 return response;
             } else {
                 throw new Error('Respuesta del servidor incompleta');
@@ -32,7 +32,7 @@ class AuthService {
     async register(userData) {
         try {
             const response = await api.post('/register', userData);
-            
+
             if (response.token && response.user) {
                 localStorage.setItem('token', response.token);
                 localStorage.setItem('user', JSON.stringify(response.user));

@@ -381,45 +381,45 @@ export default {
  
   </div>
   `,
- 
+
   // ================================================================
   //  DATA — Variables del componente (nomenclatura en español)
   // ================================================================
   data() {
     return {
       // Campos del formulario de registro
-      nombre:         '',
-      correo:         '',
-      clave:          '',
+      nombre: '',
+      correo: '',
+      clave: '',
       confirmarClave: '',
- 
+
       // Toggles de visibilidad de contraseñas
-      mostrarClave:          false,
+      mostrarClave: false,
       mostrarConfirmarClave: false,
- 
+
       // Control del campo con foco activo (estilos dinámicos de inputs)
       campoActivo: null,
- 
+
       // Estado de la solicitud
-      cargando:     false,
+      cargando: false,
       mensajeError: '',
       mensajeExito: '',
- 
+
       // Errores de validación por campo
       errores: {
-        nombre:         '',
-        correo:         '',
-        clave:          '',
+        nombre: '',
+        correo: '',
+        clave: '',
         confirmarClave: '',
       },
     };
   },
- 
+
   // ================================================================
   //  METHODS — Lógica del componente (nomenclatura en español)
   // ================================================================
   methods: {
- 
+
     /**
      * validarFormulario
      * Valida cada campo individualmente y asigna mensajes de error.
@@ -427,13 +427,13 @@ export default {
      */
     validarFormulario() {
       // Limpiar todos los errores antes de revalidar
-      this.errores.nombre         = '';
-      this.errores.correo         = '';
-      this.errores.clave          = '';
+      this.errores.nombre = '';
+      this.errores.correo = '';
+      this.errores.clave = '';
       this.errores.confirmarClave = '';
- 
+
       let formularioValido = true;
- 
+
       // — Validar nombre completo
       if (!this.nombre.trim()) {
         this.errores.nombre = 'El nombre completo es obligatorio.';
@@ -442,7 +442,7 @@ export default {
         this.errores.nombre = 'El nombre debe tener al menos 3 caracteres.';
         formularioValido = false;
       }
- 
+
       // — Validar correo electrónico
       if (!this.correo.trim()) {
         this.errores.correo = 'El correo electrónico es obligatorio.';
@@ -451,7 +451,7 @@ export default {
         this.errores.correo = 'Ingresa un correo electrónico válido.';
         formularioValido = false;
       }
- 
+
       // — Validar contraseña
       if (!this.clave) {
         this.errores.clave = 'La contraseña es obligatoria.';
@@ -460,7 +460,7 @@ export default {
         this.errores.clave = 'La contraseña debe tener al menos 6 caracteres.';
         formularioValido = false;
       }
- 
+
       // — Validar confirmación de contraseña
       if (!this.confirmarClave) {
         this.errores.confirmarClave = 'Por favor confirma tu contraseña.';
@@ -469,10 +469,10 @@ export default {
         this.errores.confirmarClave = 'Las contraseñas no coinciden.';
         formularioValido = false;
       }
- 
+
       return formularioValido;
     },
- 
+
     /**
      * manejarRegistro
      * Valida el formulario y envía los datos de registro al servidor.
@@ -482,18 +482,18 @@ export default {
       // Limpiar mensajes globales previos
       this.mensajeError = '';
       this.mensajeExito = '';
- 
+
       // Detener ejecución si hay errores de validación
       if (!this.validarFormulario()) return;
- 
+
       // Activar estado de carga
       this.cargando = true;
- 
+
       try {
         // Petición real al backend para registrar al usuario
         await authService.register({
-          name:     this.nombre.trim(),
-          email:    this.correo.trim().toLowerCase(),
+          name: this.nombre.trim(),
+          email: this.correo.trim().toLowerCase(),
           password: this.clave
         });
 
@@ -504,26 +504,26 @@ export default {
 
         // Almacenar el correo en variables temporales por si acaso
         const userEmail = this.correo.trim().toLowerCase();
-        const userPass  = this.clave;
+        const userPass = this.clave;
 
         // Limpiar campos del formulario inmediatamente
-        this.nombre         = '';
-        this.correo         = '';
-        this.clave          = '';
+        this.nombre = '';
+        this.correo = '';
+        this.clave = '';
         this.confirmarClave = '';
 
         // Intentar Auto-Login para una experiencia premium impecable!
         try {
           await authService.login(userEmail, userPass, false);
           this.mensajeExito = '¡Sesión iniciada correctamente! Redirigiendo...';
-          
+
           setTimeout(() => {
             this.$router.push('/');
           }, 1500);
         } catch (loginErr) {
           console.warn('[Olympia] Auto-login falló tras el registro, redirigiendo a login:', loginErr);
           this.mensajeExito = '¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...';
-          
+
           setTimeout(() => {
             this.$router.push('/login');
           }, 2000);
@@ -542,7 +542,6 @@ export default {
         this.cargando = false;
       }
     },
- 
+
   },
 };
- 

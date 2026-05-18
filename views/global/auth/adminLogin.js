@@ -229,7 +229,7 @@ export default {
             </div>
         </div>
     `,
-    
+
     data() {
         return {
             email: '',
@@ -243,105 +243,105 @@ export default {
             passwordError: ''
         };
     },
-    
+
     computed: {
         // ✅ Valida si el formulario está completo y sin errores
         isFormValid() {
-            return this.email && 
-                   this.password && 
-                   !this.emailError && 
-                   !this.passwordError;
+            return this.email &&
+                this.password &&
+                !this.emailError &&
+                !this.passwordError;
         }
     },
-    
+
     created() {
         // Si ya está autenticado como admin, redirigir al panel
         if (authService.isAuthenticated()) {
             window.location.href = '/#/admin';
         }
-        
+
         // Cargar email guardado si existe
         const savedEmail = localStorage.getItem('rememberedEmail');
         if (savedEmail) {
             this.email = savedEmail;
         }
     },
-    
+
     methods: {
         // ✅ Validación de email
         validateEmail() {
             this.emailError = '';
-            
+
             if (!this.email.trim()) {
                 this.emailError = 'El correo electrónico es requerido';
                 return false;
             }
-            
+
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(this.email)) {
                 this.emailError = 'Ingresa un correo electrónico válido';
                 return false;
             }
-            
+
             return true;
         },
-        
+
         // ✅ Limpiar error de email al escribir
         clearEmailError() {
             if (this.emailError) {
                 this.emailError = '';
             }
         },
-        
+
         // ✅ Validación de contraseña
         validatePassword() {
             this.passwordError = '';
-            
+
             if (!this.password) {
                 this.passwordError = 'La contraseña es requerida';
                 return false;
             }
-            
+
             if (this.password.length < 6) {
                 this.passwordError = 'La contraseña debe tener al menos 6 caracteres';
                 return false;
             }
-            
+
             return true;
         },
-        
+
         // ✅ Limpiar error de contraseña al escribir
         clearPasswordError() {
             if (this.passwordError) {
                 this.passwordError = '';
             }
         },
-        
+
         async handleLogin() {
             // Limpiar errores previos
             this.error = null;
-            
+
             // ✅ Validar campos
             const isEmailValid = this.validateEmail();
             const isPasswordValid = this.validatePassword();
-            
+
             if (!isEmailValid || !isPasswordValid) {
                 return;
             }
-            
+
             this.loading = true;
             this.successMsg = null;
-            
+
             try {
                 const response = await authService.login(this.email, this.password, true);
-                
+
                 this.successMsg = '¡Acceso concedido! Redirigiendo al panel...';
-                
+
                 // Redirigir al panel de administración después de 1 segundo
                 setTimeout(() => {
                     window.location.href = '/#/admin';
                 }, 1000);
-                
+
             } catch (error) {
                 if (error.message.includes('Acceso denegado')) {
                     this.error = 'No tienes permisos de administrador';
