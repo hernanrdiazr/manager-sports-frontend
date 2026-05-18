@@ -2,7 +2,7 @@
 import { api } from './api.js';
 
 class AuthService {
-    async login(email, password) {
+    async login(email, password, requireAdmin = false) {
         try {
             const response = await api.post('/login', { 
                 email, 
@@ -11,8 +11,8 @@ class AuthService {
             
             // La respuesta debe incluir token y user
             if (response.token && response.user) {
-                // Verificar que sea admin
-                if (response.user.role !== 'admin') {
+                // Verificar si se requiere admin
+                if (requireAdmin && response.user.role !== 'admin') {
                     throw new Error('Acceso denegado. Solo administradores.');
                 }
                 

@@ -1,4 +1,6 @@
 // views/auth/register.js
+import { authService } from '../../../services/authService.js';
+
 export default {
   template: `
   <div class="min-h-screen relative flex flex-col" style="font-family: 'Inter', sans-serif;">
@@ -488,28 +490,53 @@ export default {
       this.cargando = true;
  
       try {
-        // Simulación de llamada al API de registro (reemplazar con llamada real)
-        await new Promise(resolve => setTimeout(resolve, 1400));
-
-        // Registro exitoso: mostrar mensaje y limpiar formulario
-        this.mensajeExito = '¡Cuenta creada exitosamente! Redirigiendo...';
-
-        // Redirección real (descomentar cuando esté disponible el router):
-        // this.$router.push('/dashboard');
-
-        console.log('[Olympia] Registro exitoso:', {
-          nombre: this.nombre,
-          correo: this.correo,
+        // Petición real al backend para registrar al usuario
+        await authService.register({
+          name:     this.nombre.trim(),
+          email:    this.correo.trim().toLowerCase(),
+          password: this.clave
         });
 
-        // Limpiar campos del formulario tras éxito
+        // Registro exitoso: Mostrar mensaje agradable
+        this.mensajeExito = '¡Cuenta creada exitosamente! Iniciando sesión...';
+
+        console.log('[Olympia] Registro exitoso para:', this.correo);
+
+        // Almacenar el correo en variables temporales por si acaso
+        const userEmail = this.correo.trim().toLowerCase();
+        const userPass  = this.clave;
+
+        // Limpiar campos del formulario inmediatamente
         this.nombre         = '';
         this.correo         = '';
         this.clave          = '';
         this.confirmarClave = '';
 
+        // Intentar Auto-Login para una experiencia premium impecable!
+        try {
+          await authService.login(userEmail, userPass, false);
+          this.mensajeExito = '¡Sesión iniciada correctamente! Redirigiendo...';
+          
+          setTimeout(() => {
+            this.$router.push('/');
+          }, 1500);
+        } catch (loginErr) {
+          console.warn('[Olympia] Auto-login falló tras el registro, redirigiendo a login:', loginErr);
+          this.mensajeExito = '¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...';
+          
+          setTimeout(() => {
+            this.$router.push('/login');
+          }, 2000);
+        }
+
       } catch (error) {
-        this.mensajeError = 'Ocurrió un error al crear la cuenta. Inténtalo de nuevo.';
+        if (error.message.includes('409') || error.message.includes('ya existe') || error.message.includes('Conflict')) {
+          this.mensajeError = 'El correo electrónico ya está registrado. Intenta iniciar sesión.';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          this.mensajeError = 'Error de conexión. Verifica que el servidor de la API esté encendido.';
+        } else {
+          this.mensajeError = error.message || 'Ocurrió un error al crear la cuenta. Inténtalo de nuevo.';
+        }
         console.error('[Olympia] Error de registro:', error);
       } finally {
         this.cargando = false;

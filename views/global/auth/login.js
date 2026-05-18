@@ -1,4 +1,6 @@
 // views/auth/login.js
+import { authService } from '../../../services/authService.js';
+
 export default {
   template: `
   <div class="min-h-screen relative flex flex-col" style="font-family: 'Inter', sans-serif;">
@@ -317,7 +319,7 @@ export default {
      * Gestiona el envío del formulario de inicio de sesión.
      * Ejecuta validación previa y simula la llamada a la API de autenticación.
      */
-    async manejarLogin() {
+     async manejarLogin() {
       // Limpiar mensajes globales previos
       this.mensajeError = '';
       this.mensajeExito = '';
@@ -329,19 +331,27 @@ export default {
       this.cargando = true;
 
       try {
-        // Simulación de llamada a la API de autenticación (reemplazar con la llamada real)
-        await new Promise(resolve => setTimeout(resolve, 1200));
+        // Petición real al backend mediante authService (requireAdmin = false)
+        const response = await authService.login(this.correo, this.clave, false);
 
         // Autenticación exitosa
         this.mensajeExito = '¡Sesión iniciada correctamente! Redirigiendo...';
 
-        // Aquí se integraría la redirección real:
-        // this.$router.push('/dashboard');
+        console.log('[Olympia] Login exitoso:', response.user);
 
-        console.log('[Olympia] Login exitoso:', { correo: this.correo });
+        // Redirigir a la landing page después de 1.5 segundos
+        setTimeout(() => {
+          this.$router.push('/');
+        }, 1500);
 
       } catch (error) {
-        this.mensajeError = 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
+        if (error.message.includes('Credenciales') || error.message.includes('incorrectas') || error.message.includes('401')) {
+          this.mensajeError = 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
+        } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          this.mensajeError = 'Error de conexión. Verifica que el servidor de la API esté encendido.';
+        } else {
+          this.mensajeError = error.message || 'Error al iniciar sesión. Inténtalo de nuevo.';
+        }
         console.error('[Olympia] Error de login:', error);
       } finally {
         this.cargando = false;

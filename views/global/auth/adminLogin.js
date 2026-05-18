@@ -333,7 +333,7 @@ export default {
             this.successMsg = null;
             
             try {
-                const response = await authService.login(this.email, this.password);
+                const response = await authService.login(this.email, this.password, true);
                 
                 this.successMsg = '¡Acceso concedido! Redirigiendo al panel...';
                 
