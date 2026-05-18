@@ -12,7 +12,7 @@ export default {
         </div>
 
         <!-- Desktop Nav -->
-        <nav class="hidden md:flex items-center gap-8">
+        <nav class="hidden min-[1200px]:flex items-center gap-8">
           <!-- Ahora navItems existe en data(), por lo que esto funcionará -->
           <a v-for="item in navItems" :key="item" href="#" 
              class="text-slate-400 hover:text-white transition-colors duration-200 text-sm" 
@@ -21,7 +21,7 @@ export default {
           </a>
         </nav>
 
-        <div class="hidden md:flex items-center gap-3">
+        <div class="hidden min-[1200px]:flex items-center gap-3">
           <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors" style="font-weight: 500">
             Iniciar sesión
           </a>
@@ -31,14 +31,14 @@ export default {
         </div>
 
         <!-- Mobile Menu Button -->
-        <button class="md:hidden text-slate-400 hover:text-white transition-colors" @click="toggleMenu">
+        <button class="min-[1200px]:hidden text-slate-400 hover:text-white transition-colors" @click="toggleMenu">
           <close-hamburger v-if="menuOpen" class="w-6 h-6"></close-hamburger>
           <hamburger v-else class="w-6 h-6"></hamburger>
         </button>
       </div>
 
       <!-- Mobile Menu -->
-      <div v-if="menuOpen" class="md:hidden border-t border-slate-800 px-6 py-6 flex flex-col gap-4">
+      <div v-if="menuOpen" class="min-[1200px]:hidden border-t border-slate-800 px-6 py-6 flex flex-col gap-4">
         <a v-for="item in navItems" :key="item" href="#" class="text-slate-400 hover:text-white transition-colors text-sm" style="font-weight: 500">
           {{ item }}
         </a>
@@ -52,7 +52,7 @@ export default {
   data() {
     return {
       menuOpen: false,
-      navItems: ["Eventos", "Cómo funciona"]
+      navItems: ["¿Quiénes somos?", "¿Cómo funciona?", "Eventos", "Rankings y Estadísticas", "Contáctanos"]
     };
   },
   methods: {

@@ -6,13 +6,30 @@ export default {
         <div class="absolute inset-0 opacity-10" style="background-image: url('https://images.unsplash.com/photo-1770479086965-430e49d96e23?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzcG9ydHMlMjBzdGFkaXVtJTIwY3Jvd2QlMjBhZXJpYWx8ZW58MXx8fHwxNzc3NzY1MzkwfDA&ixlib=rb-4.1.0&q=80&w=1080'); background-size: cover; background-position: center;"></div>
         
         <div class="relative max-w-5xl mx-auto px-6 sm:px-10 pt-28 pb-36 text-center">
+        <!-- Imagen izquierda -->
+<img 
+  src="assets/img/tu-imagen-izquierda.png"
+  class="hidden md:block absolute left-[-90px] top-[70%] -translate-y-1/2 w-80 opacity-50"
+  alt="decoración izquierda"
+/>
+
+<!-- Imagen derecha -->
+<img 
+  src="assets/img/tu-imagen-derecha.png"
+  class="hidden md:block absolute right-[-90px] top-[70%] -translate-y-1/2 w-80 opacity-50"
+  alt="decoración derecha"
+/>
+
           <div class="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-[#06B6D4] px-4 py-1.5 rounded-full text-sm mb-8" style="font-weight: 600">
             <star class="w-3.5 h-3.5"></star>
             La plataforma líder en logística deportiva
           </div>
 
           <h2 class="text-white mb-6" style="font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 800; line-height: 1.15; letter-spacing: -0.03em;">
-            Gestión deportiva <span style="background: linear-gradient(90deg, #2563EB, #06B6D4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">sin complicaciones</span>
+            Tu Acceso Fácil y Seguro a Todos los Eventos Deportivos de <span style="color: #fffb00;">Ven</span>
+<span style="color: #0091ff;">ezu</span>
+<span style="color: #ff0000;">ela</span>
+
           </h2>
 
           <p class="text-slate-300 mb-14 max-w-2xl mx-auto" style="font-size: 1.125rem; line-height: 1.75">
@@ -152,7 +169,7 @@ export default {
 ],
     stats: [
     { value: "100%", label: "Trazabilidad de pagos" },
-    { value: "Real-time", label: "Control de asistencia" },
+    { value: "Tiempo Real", label: "Control de asistencia" },
     { value: "Multi-deporte", label: "Métricas adaptables" },
     { value: "24/7", label: "Soporte" }
 ]

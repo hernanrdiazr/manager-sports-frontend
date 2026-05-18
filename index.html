@@ -3,38 +3,217 @@
 <head>
     <meta charset="UTF-8">
     <title>Sport manager</title>
+    
+    <!-- Tailwind Config -->
     <script>
-  tailwind.config = {
-    theme: {
-      extend: {
-        colors: {
-          primary:   '#2563EB',   // Azul principal — botones CTA, logo, gradientes
-          'primary-dark': '#1d4ed8', // Hover del botón primario
-          secondary: '#06B6D4',   // Cian — íconos, badges, etiquetas
-          dark:      '#0F172A',   // Header, footer, fondo dark
-        },
-        fontFamily: {
-          sans: ['Inter', 'sans-serif'],
-        },
-      },
-    },
-  }
-</script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary:   '#2563EB',   // Azul principal — botones CTA, logo, gradientes
+                        'primary-dark': '#1d4ed8', // Hover del botón primario
+                        secondary: '#06B6D4',   // Cian — íconos, badges, etiquetas
+                        dark:      '#0F172A',   // Header, footer, fondo dark
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 1.5s linear infinite',
+                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+                        'loading-bar': 'loadingBar 2s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.3s ease-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { opacity: '0.5', filter: 'blur(0px)' },
+                            '50%': { opacity: '1', filter: 'blur(1px)' },
+                        },
+                        loadingBar: {
+                            '0%': { width: '0%', marginLeft: '0' },
+                            '50%': { width: '70%', marginLeft: '15%' },
+                            '100%': { width: '0%', marginLeft: '100%' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+    
+    <!-- Fuentes -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    
+    <!-- Estilos de transición -->
+    <style>
+        /* ======================================== */
+        /* TRANSICIONES DE PÁGINA */
+        /* ======================================== */
+        
+        /* Fade entre páginas */
+        .page-fade-enter-active {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        
+        .page-fade-leave-active {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        
+        .page-fade-enter-from {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        
+        .page-fade-leave-to {
+            opacity: 0;
+            transform: translateY(-8px);
+        }
+        
+        /* Slide para cambios laterales */
+        .page-slide-enter-active,
+        .page-slide-leave-active {
+            transition: all 0.3s ease;
+        }
+        
+        .page-slide-enter-from {
+            opacity: 0;
+            transform: translateX(20px);
+        }
+        
+        .page-slide-leave-to {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        
+        /* Transición del loader */
+        .loader-fade-enter-active {
+            transition: opacity 0.3s ease;
+        }
+        
+        .loader-fade-leave-active {
+            transition: opacity 0.2s ease;
+        }
+        
+        .loader-fade-enter-from,
+        .loader-fade-leave-to {
+            opacity: 0;
+        }
+        
+        /* Efecto de blur durante carga */
+        .page-content-loading {
+            filter: blur(3px);
+            pointer-events: none;
+            transition: filter 0.3s ease;
+        }
+        
+        /* Animación de entrada para contenido */
+        @keyframes contentAppear {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-content {
+            animation: contentAppear 0.4s ease-out;
+        }
+        
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Mejorar renderizado */
+        #app {
+            min-height: 100vh;
+            background-color: #0F172A;
+        }
+    </style>
 </head>
 <body>
+    <!-- App Container -->
     <div id="app">
-        <router-view />
+        <!-- Loader Global -->
+        <transition name="loader-fade">
+            <div v-if="showLoader" class="fixed inset-0 z-50 flex items-center justify-center bg-dark">
+                <div class="text-center">
+                    <!-- Loader animado -->
+                    <div class="relative w-16 h-16 mx-auto mb-6">
+                        <!-- Círculo exterior -->
+                        <div class="absolute inset-0 rounded-full border-2 border-white/10"></div>
+                        
+                        <!-- Círculo con gradiente -->
+                        <svg class="absolute inset-0 w-full h-full animate-spin-slow" viewBox="0 0 64 64">
+                            <defs>
+                                <linearGradient id="loaderGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#2563EB;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#06B6D4;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <circle 
+                                cx="32" cy="32" r="30" 
+                                fill="none" 
+                                stroke="url(#loaderGradient)" 
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-dasharray="188.5"
+                                stroke-dashoffset="94.25"
+                            />
+                        </svg>
+                        
+                        <!-- Ícono central -->
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-secondary animate-pulse-glow" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Mensaje -->
+                    <div class="space-y-3">
+                        <p class="text-white font-medium text-sm tracking-wide">
+                            {{ loaderMessage }}
+                        </p>
+                        
+                        <!-- Barra de progreso minimalista -->
+                        <div class="w-32 h-0.5 bg-white/10 rounded-full overflow-hidden mx-auto">
+                            <div class="h-full bg-gradient-to-r from-primary to-secondary rounded-full animate-loading-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </transition>
+        
+        <!-- Contenido principal con transiciones -->
+        <div :class="{ 'page-content-loading': showLoader }">
+            <router-view v-slot="{ Component, route }">
+                <transition name="page-fade" mode="out-in">
+                    <component :is="Component" :key="route.path" />
+                </transition>
+            </router-view>
+        </div>
     </div>
 
-    <!-- Librerias  -->
+    <!-- Librerías -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 
-
+    <!-- App Principal -->
     <script type="module" src="app.js"></script>
 </body>
 </html>

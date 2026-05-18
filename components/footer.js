@@ -1,6 +1,6 @@
 export default {
     template: `
-    <footer class="bg-[#0F172A] py-12">
+    <footer class="relative z-10 bg-[#0F172A] py-12">
       <div class="max-w-7xl mx-auto px-6 sm:px-10">
         <div class="flex flex-col md:flex-row items-center justify-between gap-6">
           <div class="flex items-center gap-2">
