@@ -13,7 +13,7 @@ export default {
         adminCreateEvents,
         adminManageEvents
     },
-    
+
     template: `
         <div class="min-h-screen bg-gray-50 flex" style="font-family: 'Inter', sans-serif">
             
@@ -97,7 +97,7 @@ export default {
             </div>
         </div>
     `,
-    
+
     data() {
         return {
             currentUser: null,
@@ -113,45 +113,62 @@ export default {
             }
         };
     },
-    
+
     computed: {
         currentTitle() {
             const titles = {
                 dashboard: 'Dashboard',
-                events: 'Eventos',
+                'events-create': 'Crear Eventos',
+                'events-manage': 'Gestionar Eventos',
             };
             return titles[this.activeTab] || 'Dashboard';
         }
     },
-    
+
     async created() {
         this.currentUser = authService.getCurrentUser();
-        
+
         if (!authService.isAuthenticated()) {
             this.authError = 'No tienes acceso. Debes iniciar sesión como administrador.';
             this.loading = false;
             return;
         }
-        
+
         await this.loadStats();
     },
-    
+
     methods: {
         async loadStats() {
             try {
+                // Intentamos el endpoint de stats del admin
                 const stats = await api.get('/admin/stats');
                 this.stats = stats;
             } catch (error) {
-                console.error('Error cargando stats:', error);
+                // El endpoint /admin/stats no existe aún en el backend;
+                // calculamos stats básicas desde /events como fallback
+                try {
+                    const events = await api.get('/events');
+                    const eventList = Array.isArray(events) ? events : [];
+                    const totalTickets = eventList.reduce((acc, e) => acc + (e.total_tickets || 0), 0);
+                    const soldTickets = eventList.reduce((acc, e) => acc + ((e.total_tickets || 0) - (e.available_tickets || 0)), 0);
+                    this.stats = {
+                        totalUsers: 0,
+                        totalEvents: eventList.length,
+                        totalTickets: soldTickets,
+                        monthlyRevenue: 0
+                    };
+                } catch {
+                    // Si falla también, dejamos los valores en 0
+                }
             } finally {
                 this.loading = false;
             }
         },
-        
+
         handleLogout() {
             authService.logout();
         },
-        
+
         redirectToLogin() {
             window.location.href = '/#/login/admin';
         }

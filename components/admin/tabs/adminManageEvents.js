@@ -1,4 +1,6 @@
 // AdminManageEvents.js
+import { api } from '../../../services/api.js';
+
 export default {
     template: `
         <div class="animate-fade-in">
@@ -14,6 +16,7 @@ export default {
                         <option value="futbol">Fútbol</option>
                         <option value="beisbol">Béisbol</option>
                         <option value="basquetbol">Básquetbol</option>
+                        <option value="otro">Otro</option>
                     </select>
                     
                     <!-- Buscador -->
@@ -28,11 +31,37 @@ export default {
                             class="pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] w-48"
                         >
                     </div>
+
+                    <!-- Botón recargar -->
+                    <button
+                        @click="loadEvents"
+                        :disabled="loading"
+                        class="p-2 text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 rounded-xl transition-colors"
+                        title="Recargar"
+                    >
+                        <svg class="w-5 h-5" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                    </button>
                 </div>
+            </div>
+
+            <!-- Error de carga -->
+            <div v-if="loadError" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm font-medium">
+                ⚠️ {{ loadError }}
+            </div>
+
+            <!-- Skeleton de carga -->
+            <div v-if="loading && events.length === 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                <svg class="animate-spin w-8 h-8 text-[#2563EB] mx-auto mb-3" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <p class="text-slate-400 text-sm">Cargando eventos...</p>
             </div>
             
             <!-- Tabla de eventos -->
-            <div v-if="filteredEvents.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div v-else-if="filteredEvents.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -79,17 +108,6 @@ export default {
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex items-center justify-end gap-2">
-                                        <!-- Editar -->
-                                        <button 
-                                            @click="editEvent(event)"
-                                            class="p-2 text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Editar"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                        
                                         <!-- Cambiar estado -->
                                         <button 
                                             @click="toggleStatus(event)"
@@ -126,123 +144,116 @@ export default {
                 </div>
             </div>
             
-            <!-- Estado vacío -->
-            <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <!-- Estado vacío (sin resultados) -->
+            <div v-else-if="!loading" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
                 <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">No hay eventos</h3>
-                <p class="text-slate-500">Crea tu primer evento para empezar a gestionar</p>
+                <p class="text-slate-500">{{ searchQuery || filterSport ? 'No hay eventos que coincidan con la búsqueda.' : 'Ve a "Crear Eventos" para publicar el primero.' }}</p>
             </div>
         </div>
     `,
-    
+
     data() {
         return {
             events: [],
             searchQuery: '',
-            filterSport: ''
+            filterSport: '',
+            loading: false,
+            loadError: null
         };
     },
-    
+
     computed: {
         filteredEvents() {
             return this.events.filter(event => {
-                const matchesSearch = !this.searchQuery || 
-                    event.organizer?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-                    event.location?.toLowerCase().includes(this.searchQuery.toLowerCase());
-                    
+                const q = this.searchQuery.toLowerCase();
+                const matchesSearch = !q ||
+                    (event.organizer || '').toLowerCase().includes(q) ||
+                    (event.location || '').toLowerCase().includes(q) ||
+                    (event.sport || '').toLowerCase().includes(q);
+
                 const matchesSport = !this.filterSport || event.sport === this.filterSport;
-                
+
                 return matchesSearch && matchesSport;
             });
         }
     },
-    
+
     async created() {
         await this.loadEvents();
     },
-    
+
     methods: {
         async loadEvents() {
+            this.loading = true;
+            this.loadError = null;
             try {
-                // const response = await api.get('/events');
-                // this.events = response;
-                
-                // Datos de ejemplo
-                this.events = [
-                    {
-                        id: 1,
-                        organizer: 'Liga Nacional',
-                        sport: 'futbol',
-                        location: 'Estadio Nacional',
-                        event_date: '2026-06-15',
-                        total_tickets: 5000,
-                        available_tickets: 3200,
-                        status: 'activo'
-                    },
-                    {
-                        id: 2,
-                        organizer: 'Federación de Béisbol',
-                        sport: 'beisbol',
-                        location: 'Estadio Monumental',
-                        event_date: '2026-07-20',
-                        total_tickets: 8000,
-                        available_tickets: 1500,
-                        status: 'activo'
-                    }
-                ];
+                const response = await api.get('/events');
+                // La API devuelve un array de eventos
+                this.events = Array.isArray(response) ? response : [];
             } catch (error) {
                 console.error('Error cargando eventos:', error);
+                this.loadError = 'No se pudieron cargar los eventos. Verifica que el backend esté activo en el puerto 8080.';
+                this.events = [];
+            } finally {
+                this.loading = false;
             }
         },
-        
-        formatDate(date) {
-            if (!date) return '';
-            return new Date(date).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
+
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                return new Date(dateStr).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch { return dateStr; }
         },
-        
+
         ticketPercentage(event) {
             if (!event.total_tickets) return 0;
-            const sold = event.total_tickets - event.available_tickets;
-            return Math.round((sold / event.total_tickets) * 100);
+            const sold = event.total_tickets - (event.available_tickets || 0);
+            return Math.min(100, Math.round((sold / event.total_tickets) * 100));
         },
-        
+
         statusClass(status) {
-            return status === 'activo' 
-                ? 'bg-green-50 text-green-600' 
-                : 'bg-red-50 text-red-600';
+            const map = {
+                'activo': 'bg-green-50 text-green-600',
+                'Por comenzar': 'bg-blue-50 text-blue-600',
+                'En curso': 'bg-yellow-50 text-yellow-600',
+                'Finalizado': 'bg-slate-100 text-slate-500',
+                'pausado': 'bg-red-50 text-red-600',
+            };
+            return map[status] || 'bg-gray-50 text-gray-600';
         },
-        
-        async editEvent(event) {
-            console.log('Editar evento:', event.id);
-            // Lógica para editar
-        },
-        
+
         async toggleStatus(event) {
             const newStatus = event.status === 'activo' ? 'pausado' : 'activo';
             try {
-                // await api.patch(`/events/${event.id}/status`, { status: newStatus });
+                // Se envía la petición al backend para actualizar el estado
+                await api.put(`/events/${event.id}/status`, { status: newStatus });
                 event.status = newStatus;
             } catch (error) {
-                console.error('Error cambiando estado:', error);
+                console.error('Error al cambiar el estado:', error);
+                alert('Hubo un problema actualizando el estado en el servidor.');
             }
         },
-        
+
         async deleteEvent(event) {
-            if (!confirm(`¿Eliminar "${event.organizer}"?`)) return;
+            if (!confirm(`¿Eliminar el evento "${event.organizer}"? Esta acción no se puede deshacer.`)) return;
             
             try {
-                // await api.delete(`/events/${event.id}`);
+                // Se envía la petición DELETE al backend
+                await api.delete(`/events/${event.id}`);
                 this.events = this.events.filter(e => e.id !== event.id);
             } catch (error) {
                 console.error('Error eliminando evento:', error);
+                alert('No se pudo eliminar el evento en el servidor.');
             }
         }
     }
