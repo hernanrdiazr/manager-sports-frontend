@@ -1,11 +1,29 @@
-// AdminManageEvents.js
+import { api } from '../../../services/api.js';
+import { getSportLabel } from '../event/eventSportConfig.js';
+import adminEventDetail from '../event/adminEventDetail.js';
+import { USE_MOCK_EVENTS, getMockEvents } from '../event/mockEventsData.js';
+
 export default {
+    components: { adminEventDetail },
+
     template: `
         <div class="animate-fade-in">
+            <adminEventDetail
+                v-if="selectedEvent"
+                :event="selectedEvent"
+                @close="selectedEvent = null"
+                @updated="loadEvents"
+            />
+
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Gestionar Eventos</h2>
                 <div class="flex items-center gap-3">
-                    <!-- Filtro por deporte -->
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Gestionar eventos</h2>
+                        <p class="text-sm text-slate-500 mt-0.5">Equipos, jugadores, marcador y estadísticas del partido</p>
+                    </div>
+                    <span v-if="useMock" class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700">Modo demo</span>
+                </div>
+                <div class="flex items-center gap-3">
                     <select 
                         v-model="filterSport"
                         class="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
@@ -16,7 +34,6 @@ export default {
                         <option value="basquetbol">Básquetbol</option>
                     </select>
                     
-                    <!-- Buscador -->
                     <div class="relative">
                         <svg class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -30,9 +47,17 @@ export default {
                     </div>
                 </div>
             </div>
-            
-            <!-- Tabla de eventos -->
-            <div v-if="filteredEvents.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+
+            <div v-if="loading" class="flex justify-center py-16">
+                <svg class="animate-spin w-8 h-8 text-[#2563EB]" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+            </div>
+
+            <div v-else-if="loadError" class="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm mb-4">{{ loadError }}</div>
+
+            <div v-else-if="filteredEvents.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead>
@@ -53,7 +78,7 @@ export default {
                                 </td>
                                 <td class="px-6 py-4">
                                     <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600">
-                                        {{ event.sport }}
+                                        {{ sportLabel(event.sport) }}
                                     </span>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-slate-500">
@@ -76,49 +101,15 @@ export default {
                                           :class="statusClass(event.status)">
                                         {{ event.status }}
                                     </span>
+                                    <p v-if="event.estado_partido" class="text-xs text-slate-400 mt-1">{{ event.estado_partido }}</p>
                                 </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <!-- Editar -->
-                                        <button 
-                                            @click="editEvent(event)"
-                                            class="p-2 text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Editar"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                            </svg>
-                                        </button>
-                                        
-                                        <!-- Cambiar estado -->
-                                        <button 
-                                            @click="toggleStatus(event)"
-                                            class="p-2 rounded-lg transition-colors"
-                                            :class="event.status === 'activo' 
-                                                ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
-                                                : 'text-green-500 hover:text-green-600 hover:bg-green-50'"
-                                            :title="event.status === 'activo' ? 'Pausar' : 'Activar'"
-                                        >
-                                            <svg v-if="event.status === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                        </button>
-                                        
-                                        <!-- Eliminar -->
-                                        <button 
-                                            @click="deleteEvent(event)"
-                                            class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Eliminar"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
+                                <td class="px-6 py-4 text-right">
+                                    <button 
+                                        @click="openEvent(event)"
+                                        class="px-4 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-xl hover:bg-[#1d4ed8] transition-colors"
+                                    >
+                                        Gestionar
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -126,7 +117,6 @@ export default {
                 </div>
             </div>
             
-            <!-- Estado vacío -->
             <div v-else class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
                 <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg class="w-8 h-8 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
@@ -134,7 +124,7 @@ export default {
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">No hay eventos</h3>
-                <p class="text-slate-500">Crea tu primer evento para empezar a gestionar</p>
+                <p class="text-slate-500">Crea un evento desde «Crear eventos» para empezar a gestionar</p>
             </div>
         </div>
     `,
@@ -142,14 +132,21 @@ export default {
     data() {
         return {
             events: [],
+            selectedEvent: null,
             searchQuery: '',
-            filterSport: ''
+            filterSport: '',
+            loading: false,
+            loadError: null
         };
     },
     
     computed: {
+        useMock() {
+            return USE_MOCK_EVENTS;
+        },
         filteredEvents() {
-            return this.events.filter(event => {
+            const list = Array.isArray(this.events) ? this.events : [];
+            return list.filter(event => {
                 const matchesSearch = !this.searchQuery || 
                     event.organizer?.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
                     event.location?.toLowerCase().includes(this.searchQuery.toLowerCase());
@@ -166,36 +163,25 @@ export default {
     },
     
     methods: {
+        sportLabel(sport) {
+            return getSportLabel(sport);
+        },
+
         async loadEvents() {
+            this.loading = true;
+            this.loadError = null;
             try {
-                // const response = await api.get('/events');
-                // this.events = response;
-                
-                // Datos de ejemplo
-                this.events = [
-                    {
-                        id: 1,
-                        organizer: 'Liga Nacional',
-                        sport: 'futbol',
-                        location: 'Estadio Nacional',
-                        event_date: '2026-06-15',
-                        total_tickets: 5000,
-                        available_tickets: 3200,
-                        status: 'activo'
-                    },
-                    {
-                        id: 2,
-                        organizer: 'Federación de Béisbol',
-                        sport: 'beisbol',
-                        location: 'Estadio Monumental',
-                        event_date: '2026-07-20',
-                        total_tickets: 8000,
-                        available_tickets: 1500,
-                        status: 'activo'
-                    }
-                ];
+                if (USE_MOCK_EVENTS) {
+                    this.events = getMockEvents();
+                    return;
+                }
+                const data = await api.get('/events');
+                this.events = Array.isArray(data) ? data : [];
             } catch (error) {
-                console.error('Error cargando eventos:', error);
+                this.loadError = error.message;
+                this.events = USE_MOCK_EVENTS ? getMockEvents() : [];
+            } finally {
+                this.loading = false;
             }
         },
         
@@ -219,31 +205,9 @@ export default {
                 ? 'bg-green-50 text-green-600' 
                 : 'bg-red-50 text-red-600';
         },
-        
-        async editEvent(event) {
-            console.log('Editar evento:', event.id);
-            // Lógica para editar
-        },
-        
-        async toggleStatus(event) {
-            const newStatus = event.status === 'activo' ? 'pausado' : 'activo';
-            try {
-                // await api.patch(`/events/${event.id}/status`, { status: newStatus });
-                event.status = newStatus;
-            } catch (error) {
-                console.error('Error cambiando estado:', error);
-            }
-        },
-        
-        async deleteEvent(event) {
-            if (!confirm(`¿Eliminar "${event.organizer}"?`)) return;
-            
-            try {
-                // await api.delete(`/events/${event.id}`);
-                this.events = this.events.filter(e => e.id !== event.id);
-            } catch (error) {
-                console.error('Error eliminando evento:', error);
-            }
+
+        openEvent(event) {
+            this.selectedEvent = event;
         }
     }
 };

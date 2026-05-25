@@ -16,12 +16,21 @@ class ApiService {
     }
 
     async handleResponse(response) {
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.message || data.error || 'Error en la petición');
+        const text = await response.text();
+        let data = null;
+        if (text) {
+            try {
+                data = JSON.parse(text);
+            } catch {
+                data = { message: text };
+            }
         }
-        
+
+        if (!response.ok) {
+            const msg = data?.message || data?.error || data?.mensaje || text || 'Error en la petición';
+            throw new Error(msg);
+        }
+
         return data;
     }
 
@@ -48,6 +57,20 @@ class ApiService {
             return await this.handleResponse(response);
         } catch (error) {
             console.error('POST Error:', error);
+            throw error;
+        }
+    }
+
+    async patch(endpoint, data) {
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: JSON.stringify(data)
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            console.error('PATCH Error:', error);
             throw error;
         }
     }

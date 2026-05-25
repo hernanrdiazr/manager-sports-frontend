@@ -6,7 +6,6 @@ import Login from './views/global/auth/login.js';
 import Register from './views/global/auth/register.js';
 import HomeView from './views/global/home.js';
 import AdminLogin from './views/global/auth/adminLogin.js';
-
 // Componentes de imágenes
 import logo from './components/images/logo.js';
 import star from './components/images/star.js';

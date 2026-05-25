@@ -5,13 +5,15 @@ import adminSidebar from '../../components/admin/adminSidebar.js';
 import adminDashboard from '../../components/admin/tabs/adminDashboard.js';
 import adminCreateEvents from '../../components/admin/tabs/adminCreateEvents.js';
 import adminManageEvents from "../../components/admin/tabs/adminManageEvents.js";
+import adminReservations from '../../components/admin/tabs/adminReservations.js';
 
 export default {
     components: {
         adminSidebar,
         adminDashboard,
         adminCreateEvents,
-        adminManageEvents
+        adminManageEvents,
+        adminReservations
     },
     
     template: `
@@ -92,6 +94,7 @@ export default {
                         <adminDashboard v-if="activeTab === 'dashboard'" :stats="stats" />
                         <adminCreateEvents v-if="activeTab === 'events-create'" />
                         <adminManageEvents v-if="activeTab === 'events-manage'" />
+                        <adminReservations v-if="activeTab === 'reservations'" />
                     </template>
                 </main>
             </div>
@@ -118,7 +121,9 @@ export default {
         currentTitle() {
             const titles = {
                 dashboard: 'Dashboard',
-                events: 'Eventos',
+                'events-create': 'Crear eventos',
+                'events-manage': 'Gestionar eventos',
+                reservations: 'Reservas de espectadores'
             };
             return titles[this.activeTab] || 'Dashboard';
         }
