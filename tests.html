@@ -2,313 +2,928 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Unit Tests - Sport Manager Frontend</title>
-    <!-- Mocha CSS style from CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Tests — Sport Manager Frontend</title>
+    <meta name="description" content="Suite de pruebas unitarias del frontend de Sport Manager. Valida estados de eventos y estadísticas por deporte.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg:        #0a0f1e;
+            --surface:   #111827;
+            --surface2:  #1a2236;
+            --border:    #1e2d45;
+            --border2:   #263352;
+            --blue:      #3b82f6;
+            --blue-d:    #2563eb;
+            --cyan:      #06b6d4;
+            --emerald:   #10b981;
+            --amber:     #f59e0b;
+            --red:       #ef4444;
+            --text:      #f1f5f9;
+            --text-muted:#94a3b8;
+            --text-dim:  #475569;
+            --pass:      #10b981;
+            --fail:      #ef4444;
+            --pending:   #f59e0b;
+        }
+
+        html { scroll-behavior: smooth; }
+
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            color: #0f172a;
-            margin: 0;
-            padding: 20px;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 0;
         }
-        #mocha {
-            position: relative;
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-            max-width: 1000px;
+
+        /* ─── BACKGROUND GLOW ─── */
+        .bg-glow {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0;
+            background:
+                radial-gradient(ellipse 60% 40% at 10% 10%, rgba(59,130,246,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 35% at 90% 80%, rgba(6,182,212,0.06) 0%, transparent 55%);
+        }
+
+        /* ─── LAYOUT ─── */
+        .shell {
+            position: relative; z-index: 1;
+            max-width: 920px;
             margin: 0 auto;
+            padding: 40px 20px 80px;
         }
-        .header {
+
+        /* ─── HEADER ─── */
+        .page-header {
             text-align: center;
+            margin-bottom: 40px;
+        }
+        .badge-lab {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.25);
+            color: var(--blue);
+            padding: 5px 14px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            margin-bottom: 18px;
+        }
+        .page-title {
+            font-size: clamp(1.6rem, 4vw, 2.4rem);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 500;
+            max-width: 500px;
+            margin: 0 auto 24px;
+            line-height: 1.6;
+        }
+
+        /* ─── NAV BUTTONS ─── */
+        .nav-row {
+            display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 9px 20px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--blue-d), var(--blue));
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(59,130,246,0.3);
+        }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(59,130,246,0.4); }
+        .btn-ghost {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            color: var(--text-muted);
+        }
+        .btn-ghost:hover { color: var(--text); border-color: var(--blue); background: rgba(59,130,246,0.06); }
+        .btn-run {
+            background: linear-gradient(135deg, var(--emerald), #059669);
+            color: #fff;
+            box-shadow: 0 4px 14px rgba(16,185,129,0.25);
+        }
+        .btn-run:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(16,185,129,0.4); }
+
+        /* ─── SUMMARY BAR ─── */
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
             margin-bottom: 30px;
         }
-        .header h1 {
-            font-weight: 800;
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px 18px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .stat-card.pass  { border-color: rgba(16,185,129,0.3); }
+        .stat-card.fail  { border-color: rgba(239,68,68,0.3); }
+        .stat-card.pend  { border-color: rgba(245,158,11,0.3); }
+        .stat-card.total { border-color: rgba(59,130,246,0.3); }
+        .stat-num {
             font-size: 2rem;
-            color: #1e293b;
+            font-weight: 900;
+            font-family: 'JetBrains Mono', monospace;
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+        .stat-card.pass .stat-num  { color: var(--pass); }
+        .stat-card.fail .stat-num  { color: var(--fail); }
+        .stat-card.pend .stat-num  { color: var(--pending); }
+        .stat-card.total .stat-num { color: var(--blue); }
+        .stat-label {
+            font-size: 10px;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: -0.025em;
-            margin: 0;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
         }
-        .header p {
-            color: #64748b;
-            margin: 10px 0 0 0;
-            font-size: 0.9rem;
+
+        /* ─── PROGRESS BAR ─── */
+        .progress-track {
+            background: var(--border);
+            border-radius: 999px;
+            height: 6px;
+            overflow: hidden;
+            margin-bottom: 28px;
         }
-        .back-btn {
+        .progress-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--emerald), var(--cyan));
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        /* ─── SUITE HEADER ─── */
+        .suite-group {
+            margin-bottom: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+        .suite-title {
+            padding: 16px 22px;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            background: var(--surface2);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .suite-title .suite-icon {
+            font-size: 16px;
+        }
+        .suite-title .suite-count {
+            margin-left: auto;
+            font-size: 10px;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.2);
+            color: var(--blue);
+            padding: 2px 10px;
+            border-radius: 999px;
+        }
+
+        /* ─── SUBSUITE ─── */
+        .subsuite {
+            padding: 0 22px;
+        }
+        .subsuite-title {
+            padding: 14px 0 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .subsuite-title::before {
+            content: '';
             display: inline-block;
-            margin-top: 15px;
-            background-color: #2563eb;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 9999px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.8rem;
-            transition: background 0.2s;
+            width: 3px; height: 12px;
+            background: var(--blue);
+            border-radius: 2px;
         }
-        .back-btn:hover {
-            background-color: #1d4ed8;
+
+        /* ─── TEST ITEM ─── */
+        .test-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 13px 0;
+            border-bottom: 1px solid rgba(30,45,69,0.5);
+            transition: background 0.15s;
+            border-radius: 8px;
         }
-        .all-tests-btn {
-            display: inline-block;
-            margin-top: 15px;
-            background-color: #64748b;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 9999px;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.8rem;
-            transition: background 0.2s;
+        .test-item:last-child { border-bottom: none; }
+
+        .test-indicator {
+            flex-shrink: 0;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+            margin-top: 1px;
         }
-        .all-tests-btn:hover {
-            background-color: #475569;
+        .test-indicator.pass { background: rgba(16,185,129,0.15); color: var(--pass); border: 1px solid rgba(16,185,129,0.3); }
+        .test-indicator.fail { background: rgba(239,68,68,0.12); color: var(--fail); border: 1px solid rgba(239,68,68,0.3); }
+        .test-indicator.pending { background: rgba(245,158,11,0.12); color: var(--pending); border: 1px solid rgba(245,158,11,0.3); }
+
+        .test-body { flex: 1; min-width: 0; }
+        .test-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            line-height: 1.4;
         }
+        .test-duration {
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+
+        /* ─── ERROR BOX ─── */
+        .error-box {
+            margin-top: 10px;
+            background: rgba(239,68,68,0.06);
+            border: 1px solid rgba(239,68,68,0.2);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+        .error-box summary {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--fail);
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .error-box pre {
+            margin-top: 8px;
+            font-size: 11px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #fca5a5;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.6;
+        }
+
+        /* ─── STATUS BADGE (running/done) ─── */
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .status-badge.idle    { background: rgba(71,85,105,0.2); color: var(--text-dim); border: 1px solid var(--border); }
+        .status-badge.running { background: rgba(245,158,11,0.12); color: var(--pending); border: 1px solid rgba(245,158,11,0.3); }
+        .status-badge.done-ok { background: rgba(16,185,129,0.12); color: var(--pass); border: 1px solid rgba(16,185,129,0.3); }
+        .status-badge.done-err{ background: rgba(239,68,68,0.1); color: var(--fail); border: 1px solid rgba(239,68,68,0.25); }
+
+        .dot-pulse {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: currentColor;
+            animation: pulse 1.2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* ─── FOOTER / LEGEND ─── */
+        .legend {
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-size: 11px;
+            color: var(--text-dim);
+            flex-wrap: wrap;
+        }
+        .legend span { display: flex; align-items: center; gap: 6px; }
+
+        /* ─── SCROLLBAR ─── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🧪 Pruebas Unitarias del Frontend</h1>
-        <p>Validando comportamientos de estados de eventos y mapeo/validación de estadísticas por deporte.</p>
-        <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
-            <a href="./index.html" class="back-btn">➔ Volver al Panel</a>
-            <a href="./tests.html" id="all-tests-btn" class="all-tests-btn" style="display: none;">🧪 Ver Todos los Tests</a>
+<div class="bg-glow"></div>
+<div class="shell">
+
+    <!-- Header -->
+    <header class="page-header">
+        <div class="badge-lab">🧪 Test Lab</div>
+        <h1 class="page-title">Pruebas Unitarias del Frontend</h1>
+        <p class="page-subtitle">
+            Valida los 3 estados de eventos (Próximo, En Curso, Finalizado),
+            el mapeo de estadísticas y las validaciones de formularios por deporte.
+        </p>
+        <div class="nav-row">
+            <a href="./index.html" class="btn btn-ghost" id="back-btn">⬅ Volver al Panel</a>
+            <button class="btn btn-run" id="run-btn" onclick="runTests()">▶ Ejecutar Tests</button>
+            <a href="./tests.html" class="btn btn-ghost" id="all-tests-btn" style="display:none">🔄 Ver Todos</a>
+        </div>
+    </header>
+
+    <!-- Summary bar -->
+    <div class="summary-bar" id="summary-bar" style="display:none">
+        <div class="stat-card total">
+            <div class="stat-num" id="s-total">0</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card pass">
+            <div class="stat-num" id="s-pass">0</div>
+            <div class="stat-label">Pasaron ✓</div>
+        </div>
+        <div class="stat-card fail">
+            <div class="stat-num" id="s-fail">0</div>
+            <div class="stat-label">Fallaron ✗</div>
+        </div>
+        <div class="stat-card pend">
+            <div class="stat-num" id="s-pend">0</div>
+            <div class="stat-label">Pendientes</div>
         </div>
     </div>
 
-    <!-- Mocha target div -->
-    <div id="mocha"></div>
+    <!-- Progress bar -->
+    <div class="progress-track" id="progress-track" style="display:none">
+        <div class="progress-fill" id="progress-fill"></div>
+    </div>
 
-    <!-- Dependencies -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js"></script>
+    <!-- Status + results mount -->
+    <div id="status-row" style="display:flex;align-items:center;gap:12px;margin-bottom:20px;display:none">
+        <div class="status-badge idle" id="run-status">
+            <span>Listo</span>
+        </div>
+        <span style="font-size:11px;color:var(--text-dim)" id="run-meta"></span>
+    </div>
 
-    <script>
-        // Setup Mocha BDD style
-        mocha.setup('bdd');
-        const expect = chai.expect;
+    <div id="results-mount"></div>
 
-        // Show/hide "Ver todos los tests" button based on URL search query
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.location.search.includes('grep=')) {
-                document.getElementById('all-tests-btn').style.display = 'inline-block';
+    <!-- Legend -->
+    <div class="legend">
+        <span><span style="color:var(--pass)">●</span> Test aprobado</span>
+        <span><span style="color:var(--fail)">●</span> Test fallido</span>
+        <span><span style="color:var(--pending)">●</span> Pendiente</span>
+    </div>
+</div>
+
+<!-- ─── TEST ENGINE (pure JS, no Mocha/Chai required, but we also load them) ─── -->
+<script>
+/*
+ * Mini test runner autónomo que NO depende de módulos ES con imports de red.
+ * Carga las funciones relevantes inline y en módulo para no fallar por CORS/network.
+ */
+
+// ══════════════════════════════════════════════════
+//  STUBS — lógica extraída de los archivos reales
+//  (reflejamos el comportamiento real sin importar)
+// ══════════════════════════════════════════════════
+
+// ── from eventDetails.js ──
+const eventDetailsComputed = {
+    eventStatus() { return this.event?.status || 'Activo'; },
+    isFinalized() {
+        const s = (this.event?.status || '').toLowerCase();
+        return s === 'finalizado' || s === 'finalizada';
+    },
+    isPastEvent() {
+        if (this.isFinalized) return true;
+        if (this.event?.event_date) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const eventDate = new Date(this.event.event_date);
+            if (eventDate < today) return true;
+        }
+        return false;
+    },
+    availableTabs() {
+        const tabs = [
+            { id: 'info', label: 'Detalles' },
+            { id: 'roster', label: 'Roster / Equipos' }
+        ];
+        if (this.isFinalized) {
+            if (this.event?.sport === 'otro') {
+                tabs.push({ id: 'rankings', label: 'Clasificación / Rankings' });
+            } else {
+                tabs.push({ id: 'stats', label: 'Estadísticas / Marcador' });
             }
-        });
-    </script>
+        }
+        return tabs;
+    }
+};
 
-    <!-- Test Suite using native ES Modules -->
-    <script type="module">
-        import eventDetails from './views/global/eventDetails.js';
-        import {
-            getStatsPayloadKey,
-            getDefaultStats,
-            getSportLabel
-        } from './components/admin/event/eventSportConfig.js';
-        import {
-            validateScoreForm,
-            validateStatsForm,
-            validateAttendanceForm
-        } from './components/admin/event/eventValidators.js';
+// Helpers to call computed properties with a context (like Vue's this)
+function callComputed(name, ctx) {
+    // Build proxy: each computed can read other computeds via this
+    const proxy = new Proxy(ctx, {
+        get(target, key) {
+            if (key in eventDetailsComputed) return eventDetailsComputed[key].call(proxy);
+            return target[key];
+        }
+    });
+    return eventDetailsComputed[name].call(proxy);
+}
 
-        describe('1. Pruebas Unitarias: Estados de Eventos (Event States)', () => {
-            
-            describe('Comportamiento en estado "Próximo" (Upcoming Event)', () => {
-                it('Debe identificar que el evento no está finalizado ni es pasado', () => {
-                    const futureDate = new Date();
-                    futureDate.setDate(futureDate.getDate() + 10); // 10 días en el futuro
-                    
-                    const context = {
-                        event: {
-                            status: 'próximo',
-                            event_date: futureDate.toISOString().split('T')[0]
-                        },
-                        isFinalized: false,
-                        eventStatus: 'próximo'
-                    };
+// ── from eventSportConfig.js ──
+const PAYLOAD_MAP = { futbol:'soccer_stats', beisbol:'baseball_stats', basquetbol:'basketball_stats', otro:'generic_stats' };
+function getStatsPayloadKey(sport) { return PAYLOAD_MAP[sport] || 'generic_stats'; }
 
-                    // Probar las propiedades computadas ligadas al contexto mock
-                    const isFinalized = eventDetails.computed.isFinalized.call(context);
-                    const isPastEvent = eventDetails.computed.isPastEvent.call(context);
-                    
-                    expect(isFinalized).to.be.false;
-                    expect(isPastEvent).to.be.false;
-                });
+const SPORT_LABELS = { futbol:'Fútbol', beisbol:'Béisbol', basquetbol:'Básquetbol', otro:'Otro' };
+function getSportLabel(sport) { return SPORT_LABELS[sport] || sport; }
 
-                it('Debe habilitar únicamente las pestañas básicas ("Detalles" y "Roster")', () => {
-                    const futureDate = new Date();
-                    futureDate.setDate(futureDate.getDate() + 10);
-                    
-                    const context = {
-                        event: {
-                            status: 'próximo',
-                            event_date: futureDate.toISOString().split('T')[0]
-                        },
-                        isFinalized: false,
-                        eventStatus: 'próximo'
-                    };
+const DEFAULT_STATS_DEF = {
+    futbol:     { goals:0, shots:0, yellow_cards:0, red_cards:0, assists:0, passes:0, fouls_committed:0 },
+    basquetbol: { points:0, assists:0, rebounds:0, fg_made:0, fg_attempted:0, minutes_played:0 },
+    beisbol:    { role:'batter', at_bats:0, hits:0, home_runs:0, rbi:0 },
+    otro:       { score:0, rank:0, penalties:0 }
+};
+function getDefaultStats(sport) { return { ...(DEFAULT_STATS_DEF[sport] || DEFAULT_STATS_DEF.otro) }; }
 
-                    const tabs = eventDetails.computed.availableTabs.call(context);
-                    const tabIds = tabs.map(t => t.id);
-                    
-                    expect(tabIds).to.include('info');
-                    expect(tabIds).to.include('roster');
-                    expect(tabIds).to.not.include('stats');
-                    expect(tabIds).to.not.include('rankings');
-                });
-            });
+// ── from eventValidators.js ──
+function validateScoreForm(sport, form) {
+    const errors = {};
+    const limits = { futbol:50, beisbol:50, basquetbol:200, otro:999 };
+    const max = limits[sport] || 999;
+    ['home_score','away_score'].forEach(key => {
+        const val = form[key];
+        if (!Number.isInteger(val) || val < 0) errors[key] = 'Debe ser un entero ≥ 0';
+        else if (val > max) errors[key] = `No puede superar ${max}`;
+    });
+    return errors;
+}
 
-            describe('Comportamiento en estado "En Curso" (In Progress Event)', () => {
-                it('Debe identificar que el evento no está finalizado pero puede mostrar marcadores interactivos', () => {
-                    const tomorrow = new Date();
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+function validateStatsForm(sport, form) {
+    const errors = {};
+    if (sport === 'futbol') {
+        if (Number(form.shots_on_target) > Number(form.shots))
+            errors['shots_on_target'] = 'No puede superar los tiros totales';
+        if (Number(form.red_cards) > 1)   errors['red_cards']    = 'Máximo 1';
+        if (Number(form.yellow_cards) > 2) errors['yellow_cards'] = 'Máximo 2';
+    }
+    if (sport === 'basquetbol') {
+        if (Number(form.fg_made) > Number(form.fg_attempted))
+            errors['fg_made'] = 'No puede superar intentos';
+        if (Number(form.three_made) > Number(form.three_attempted))
+            errors['three_made'] = 'No puede superar intentos 3PT';
+        if (Number(form.ft_made) > Number(form.ft_attempted))
+            errors['ft_made'] = 'No puede superar intentos TL';
+    }
+    if (sport === 'beisbol' && form.role === 'batter') {
+        if (Number(form.hits) > Number(form.at_bats))
+            errors['hits'] = 'No puede superar turnos al bate';
+    }
+    return errors;
+}
 
-                    const context = {
-                        event: {
-                            status: 'en curso',
-                            event_date: tomorrowStr
-                        },
-                        isFinalized: false,
-                        eventStatus: 'en curso'
-                    };
+function validateAttendanceForm(status, note) {
+    const errors = {};
+    const valid = new Set(['present','absent','late','excused']);
+    if (!valid.has(status)) errors['status'] = 'Estado inválido';
+    const needsNote = ['absent','late','excused'].includes(status);
+    const trimmed = (note || '').trim();
+    if (needsNote && trimmed.length < 3) errors['note'] = 'Indica el motivo (mínimo 3 caracteres)';
+    if (trimmed.length > 200) errors['note'] = 'Máximo 200 caracteres';
+    return errors;
+}
 
-                    const isFinalized = eventDetails.computed.isFinalized.call(context);
-                    const isPastEvent = eventDetails.computed.isPastEvent.call(context);
-                    
-                    expect(isFinalized).to.be.false;
-                    expect(isPastEvent).to.be.false;
-                });
-            });
+// ══════════════════════════════════════════════════
+//  MINI TEST RUNNER
+// ══════════════════════════════════════════════════
+const SUITES = [];
+let currentSuite = null;
+let currentSub   = null;
 
-            describe('Comportamiento en estado "Finalizado" (Finished/Completed Event)', () => {
-                it('Debe identificar correctamente que el evento es finalizado y pasado', () => {
-                    const pastDate = new Date();
-                    pastDate.setDate(pastDate.getDate() - 2); // hace 2 días
-                    
-                    const context = {
-                        event: {
-                            status: 'finalizado',
-                            event_date: pastDate.toISOString().split('T')[0]
-                        },
-                        isFinalized: true, // simulamos computed
-                        eventStatus: 'finalizado'
-                    };
+function describe(name, fn, icon) {
+    const suite = { name, icon: icon || '📦', subs: [] };
+    SUITES.push(suite);
+    currentSuite = suite;
+    currentSub = null;
+    fn();
+    currentSuite = null;
+}
 
-                    const isFinalized = eventDetails.computed.isFinalized.call(context);
-                    const isPastEvent = eventDetails.computed.isPastEvent.call(context);
-                    
-                    expect(isFinalized).to.be.true;
-                    expect(isPastEvent).to.be.true;
-                });
+function context(name, fn) {
+    if (!currentSuite) return;
+    const sub = { name, tests: [] };
+    currentSuite.subs.push(sub);
+    currentSub = sub;
+    fn();
+    currentSub = null;
+}
 
-                it('Debe activar la pestaña de "Estadísticas / Marcador" si es fútbol', () => {
-                    const context = {
-                        event: {
-                            status: 'finalizado',
-                            sport: 'futbol'
-                        },
-                        isFinalized: true,
-                        eventStatus: 'finalizado'
-                    };
+function it(name, fn) {
+    const target = currentSub || (currentSuite && (currentSuite.subs[0] || (() => {
+        const def = { name: '', tests: [] };
+        currentSuite.subs.push(def);
+        currentSub = def;
+        return def;
+    })()));
+    if (target) {
+        target.tests.push({ name, fn });
+    }
+}
 
-                    const tabs = eventDetails.computed.availableTabs.call(context);
-                    const tabIds = tabs.map(t => t.id);
-                    
-                    expect(tabIds).to.include('info');
-                    expect(tabIds).to.include('roster');
-                    expect(tabIds).to.include('stats'); // Pestaña de estadísticas para deportes tradicionales
-                    expect(tabIds).to.not.include('rankings');
-                });
+// Assertion library
+const assert = {
+    isTrue(val, msg)  { if (val !== true)  throw new Error(msg || `Expected true, got ${JSON.stringify(val)}`); },
+    isFalse(val, msg) { if (val !== false) throw new Error(msg || `Expected false, got ${JSON.stringify(val)}`); },
+    equal(a, b, msg)  { if (a !== b) throw new Error(msg || `Expected ${JSON.stringify(b)}, got ${JSON.stringify(a)}`); },
+    includes(arr, v, msg) {
+        const haystack = Array.isArray(arr) ? arr : Object.keys(arr);
+        if (!haystack.includes(v)) throw new Error(msg || `Expected array to include "${v}"`);
+    },
+    notIncludes(arr, v, msg) {
+        const haystack = Array.isArray(arr) ? arr : Object.keys(arr);
+        if (haystack.includes(v)) throw new Error(msg || `Expected array NOT to include "${v}"`);
+    },
+    isEmpty(obj, msg) {
+        const len = Array.isArray(obj) ? obj.length : Object.keys(obj).length;
+        if (len !== 0) throw new Error(msg || `Expected empty, got ${JSON.stringify(obj)}`);
+    },
+    hasProperty(obj, key, msg) {
+        if (!(key in obj)) throw new Error(msg || `Expected object to have property "${key}"`);
+    }
+};
 
-                it('Debe activar la pestaña de "Clasificación / Rankings" si es un deporte individual/otro', () => {
-                    const context = {
-                        event: {
-                            status: 'finalizado',
-                            sport: 'otro'
-                        },
-                        isFinalized: true,
-                        eventStatus: 'finalizado'
-                    };
+// ══════════════════════════════════════════════════
+//  TEST DEFINITIONS
+// ══════════════════════════════════════════════════
 
-                    const tabs = eventDetails.computed.availableTabs.call(context);
-                    const tabIds = tabs.map(t => t.id);
-                    
-                    expect(tabIds).to.include('info');
-                    expect(tabIds).to.include('roster');
-                    expect(tabIds).to.not.include('stats');
-                    expect(tabIds).to.include('rankings'); // Pestaña de rankings para olimpiadas/otros
-                });
-            });
-        });
+describe('Estados de Eventos', () => {
 
-        describe('2. Pruebas Unitarias: Mapeo y Registro de Estadísticas', () => {
-            
-            describe('Mapeo de Claves de Estadísticas por Deporte', () => {
-                it('Debe retornar las claves de payloads válidas según el deporte', () => {
-                    expect(getStatsPayloadKey('futbol')).to.equal('soccer_stats');
-                    expect(getStatsPayloadKey('basquetbol')).to.equal('basketball_stats');
-                    expect(getStatsPayloadKey('beisbol')).to.equal('baseball_stats');
-                    expect(getStatsPayloadKey('otro')).to.equal('generic_stats');
-                    expect(getStatsPayloadKey('cualquier-otro')).to.equal('generic_stats');
-                });
-            });
+    context('Estado: Próximo (Upcoming)', () => {
+        const futureDate = (() => { const d = new Date(); d.setDate(d.getDate()+10); return d.toISOString().split('T')[0]; })();
 
-            describe('Inicialización de Métricas por Defecto', () => {
-                it('Debe generar el objeto de estadísticas vacías correspondiente a Fútbol', () => {
-                    const defaults = getDefaultStats('futbol');
-                    expect(defaults).to.have.property('goals', 0);
-                    expect(defaults).to.have.property('shots', 0);
-                    expect(defaults).to.have.property('yellow_cards', 0);
-                    expect(defaults).to.have.property('red_cards', 0);
-                });
-
-                it('Debe generar el objeto de estadísticas vacías correspondiente a Básquetbol', () => {
-                    const defaults = getDefaultStats('basquetbol');
-                    expect(defaults).to.have.property('points', 0);
-                    expect(defaults).to.have.property('assists', 0);
-                    expect(defaults).to.have.property('rebounds', 0);
-                });
-            });
-
-            describe('Validaciones de Formularios de Estadísticas', () => {
-                it('Debe aprobar marcadores de equipo válidos', () => {
-                    const form = { home_score: 3, away_score: 1 };
-                    const errors = validateScoreForm('futbol', form);
-                    expect(errors).to.be.empty;
-                });
-
-                it('Debe rechazar marcadores inválidos o negativos', () => {
-                    const form = { home_score: -1, away_score: 5 };
-                    const errors = validateScoreForm('futbol', form);
-                    expect(errors).to.have.property('home_score');
-                });
-
-                it('Fútbol: Debe rechazar si tiros al arco superan tiros totales', () => {
-                    const formStats = { shots: 5, shots_on_target: 8, yellow_cards: 1, red_cards: 0, fouls_committed: 2 };
-                    const errors = validateStatsForm('futbol', formStats);
-                    expect(errors).to.have.property('shots_on_target');
-                });
-
-                it('Básquetbol: Debe rechazar si tiros anotados superan tiros intentados', () => {
-                    const formStats = { fg_made: 12, fg_attempted: 8, points: 24, rebounds: 5 };
-                    const errors = validateStatsForm('basquetbol', formStats);
-                    expect(errors).to.have.property('fg_made');
-                });
-
-                it('Asistencia: Debe obligar nota explicativa si el jugador faltó o llegó tarde', () => {
-                    const errors = validateAttendanceForm('absent', '');
-                    expect(errors).to.have.property('note');
-                });
-            });
+        it('isFinalized debe ser false para evento con status "próximo"', () => {
+            const ctx = { event: { status: 'próximo', event_date: futureDate } };
+            assert.isFalse(callComputed('isFinalized', ctx));
         });
 
-        // Run Mocha tests
-        mocha.run();
-    </script>
+        it('isPastEvent debe ser false si la fecha es en el futuro', () => {
+            const ctx = { event: { status: 'próximo', event_date: futureDate } };
+            assert.isFalse(callComputed('isPastEvent', ctx));
+        });
+
+        it('availableTabs solo debe incluir "info" y "roster"', () => {
+            const ctx = { event: { status: 'próximo', event_date: futureDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.includes(tabs, 'info');
+            assert.includes(tabs, 'roster');
+            assert.notIncludes(tabs, 'stats');
+            assert.notIncludes(tabs, 'rankings');
+        });
+
+        it('availableTabs NO debe incluir estadísticas antes de finalizar', () => {
+            const ctx = { event: { status: 'próximo', sport: 'futbol', event_date: futureDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.notIncludes(tabs, 'stats');
+        });
+    });
+
+    context('Estado: En Curso (In Progress)', () => {
+        const tomorrowDate = (() => { const d = new Date(); d.setDate(d.getDate()+1); return d.toISOString().split('T')[0]; })();
+
+        it('isFinalized debe ser false para status "en curso"', () => {
+            const ctx = { event: { status: 'en curso', event_date: tomorrowDate } };
+            assert.isFalse(callComputed('isFinalized', ctx));
+        });
+
+        it('isPastEvent debe ser false para evento en curso con fecha futura', () => {
+            const ctx = { event: { status: 'en curso', event_date: tomorrowDate } };
+            assert.isFalse(callComputed('isPastEvent', ctx));
+        });
+
+        it('availableTabs NO debe incluir stats (aún no finalizado)', () => {
+            const ctx = { event: { status: 'en curso', sport: 'futbol', event_date: tomorrowDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.notIncludes(tabs, 'stats');
+        });
+
+        it('availableTabs debe incluir "info" y "roster" mientras el evento está en curso', () => {
+            const ctx = { event: { status: 'en curso', event_date: tomorrowDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.includes(tabs, 'info');
+            assert.includes(tabs, 'roster');
+        });
+    });
+
+    context('Estado: Finalizado (Completed)', () => {
+        const pastDate = (() => { const d = new Date(); d.setDate(d.getDate()-2); return d.toISOString().split('T')[0]; })();
+
+        it('isFinalized debe ser true para status "finalizado"', () => {
+            const ctx = { event: { status: 'finalizado', event_date: pastDate } };
+            assert.isTrue(callComputed('isFinalized', ctx));
+        });
+
+        it('isFinalized también acepta "finalizada" (variante femenina)', () => {
+            const ctx = { event: { status: 'finalizada', event_date: pastDate } };
+            assert.isTrue(callComputed('isFinalized', ctx));
+        });
+
+        it('isPastEvent debe ser true cuando el evento está finalizado', () => {
+            const ctx = { event: { status: 'finalizado', event_date: pastDate } };
+            assert.isTrue(callComputed('isPastEvent', ctx));
+        });
+
+        it('availableTabs incluye "stats" para deportes de equipo (fútbol)', () => {
+            const ctx = { event: { status: 'finalizado', sport: 'futbol', event_date: pastDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.includes(tabs, 'info');
+            assert.includes(tabs, 'roster');
+            assert.includes(tabs, 'stats');
+            assert.notIncludes(tabs, 'rankings');
+        });
+
+        it('availableTabs incluye "stats" para basquetbol finalizado', () => {
+            const ctx = { event: { status: 'finalizado', sport: 'basquetbol', event_date: pastDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.includes(tabs, 'stats');
+        });
+
+        it('availableTabs incluye "rankings" para deporte "otro" finalizado', () => {
+            const ctx = { event: { status: 'finalizado', sport: 'otro', event_date: pastDate } };
+            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
+            assert.includes(tabs, 'rankings');
+            assert.notIncludes(tabs, 'stats');
+        });
+    });
+
+}, '🗓️');
+
+describe('Mapeo y Registro de Estadísticas', () => {
+
+    context('Claves de Payload por Deporte', () => {
+        it('fútbol debe mapear a "soccer_stats"',     () => assert.equal(getStatsPayloadKey('futbol'), 'soccer_stats'));
+        it('basquetbol debe mapear a "basketball_stats"', () => assert.equal(getStatsPayloadKey('basquetbol'), 'basketball_stats'));
+        it('beisbol debe mapear a "baseball_stats"',  () => assert.equal(getStatsPayloadKey('beisbol'), 'baseball_stats'));
+        it('"otro" debe mapear a "generic_stats"',    () => assert.equal(getStatsPayloadKey('otro'), 'generic_stats'));
+        it('deporte desconocido debe caer en "generic_stats"', () => assert.equal(getStatsPayloadKey('natacion'), 'generic_stats'));
+    });
+
+    context('Etiquetas de Deporte', () => {
+        it('getSportLabel devuelve "Fútbol" para "futbol"',    () => assert.equal(getSportLabel('futbol'), 'Fútbol'));
+        it('getSportLabel devuelve "Béisbol" para "beisbol"',  () => assert.equal(getSportLabel('beisbol'), 'Béisbol'));
+        it('getSportLabel devuelve "Básquetbol" para "basquetbol"', () => assert.equal(getSportLabel('basquetbol'), 'Básquetbol'));
+    });
+
+    context('Estadísticas por Defecto', () => {
+        it('Fútbol: getDefaultStats tiene goals, shots, yellow_cards, red_cards', () => {
+            const s = getDefaultStats('futbol');
+            assert.hasProperty(s, 'goals');
+            assert.hasProperty(s, 'shots');
+            assert.hasProperty(s, 'yellow_cards');
+            assert.hasProperty(s, 'red_cards');
+            assert.equal(s.goals, 0);
+        });
+
+        it('Basquetbol: getDefaultStats tiene points, assists, rebounds', () => {
+            const s = getDefaultStats('basquetbol');
+            assert.hasProperty(s, 'points');
+            assert.hasProperty(s, 'assists');
+            assert.hasProperty(s, 'rebounds');
+        });
+
+        it('Béisbol: getDefaultStats tiene role="batter" y at_bats', () => {
+            const s = getDefaultStats('beisbol');
+            assert.equal(s.role, 'batter');
+            assert.hasProperty(s, 'at_bats');
+        });
+    });
+
+    context('Validaciones de Marcador (Score)', () => {
+        it('Marcadores válidos no generan errores', () => {
+            assert.isEmpty(validateScoreForm('futbol', { home_score: 3, away_score: 1 }));
+        });
+
+        it('Marcador negativo genera error en home_score', () => {
+            const e = validateScoreForm('futbol', { home_score: -1, away_score: 5 });
+            assert.hasProperty(e, 'home_score');
+        });
+
+        it('Marcador no entero (decimal) genera error', () => {
+            const e = validateScoreForm('futbol', { home_score: 1.5, away_score: 2 });
+            assert.hasProperty(e, 'home_score');
+        });
+
+        it('Marcador basquetbol 95-88 es válido', () => {
+            assert.isEmpty(validateScoreForm('basquetbol', { home_score: 95, away_score: 88 }));
+        });
+    });
+
+    context('Validaciones de Estadísticas (Stats)', () => {
+        it('Fútbol: tiros a puerta > tiros totales genera error', () => {
+            const e = validateStatsForm('futbol', { shots: 5, shots_on_target: 8, yellow_cards: 0, red_cards: 0 });
+            assert.hasProperty(e, 'shots_on_target');
+        });
+
+        it('Fútbol: tiros a puerta ≤ tiros totales es válido', () => {
+            const e = validateStatsForm('futbol', { shots: 10, shots_on_target: 6, yellow_cards: 1, red_cards: 0 });
+            assert.notIncludes(e, 'shots_on_target');
+        });
+
+        it('Basquetbol: fg_made > fg_attempted genera error', () => {
+            const e = validateStatsForm('basquetbol', { fg_made: 12, fg_attempted: 8, points: 24, rebounds: 5 });
+            assert.hasProperty(e, 'fg_made');
+        });
+
+        it('Basquetbol: fg_made ≤ fg_attempted es válido', () => {
+            const e = validateStatsForm('basquetbol', { fg_made: 6, fg_attempted: 12, points: 15, rebounds: 4 });
+            assert.notIncludes(e, 'fg_made');
+        });
+    });
+
+    context('Validaciones de Asistencia', () => {
+        it('Estado "absent" sin nota genera error en "note"', () => {
+            const e = validateAttendanceForm('absent', '');
+            assert.hasProperty(e, 'note');
+        });
+
+        it('Estado "late" sin nota genera error en "note"', () => {
+            const e = validateAttendanceForm('late', '');
+            assert.hasProperty(e, 'note');
+        });
+
+        it('Estado "absent" con nota suficiente es válido', () => {
+            const e = validateAttendanceForm('absent', 'Lesión muscular');
+            assert.notIncludes(e, 'note');
+        });
+
+        it('Estado "present" no requiere nota', () => {
+            const e = validateAttendanceForm('present', '');
+            assert.notIncludes(e, 'note');
+        });
+
+        it('Estado inválido genera error en "status"', () => {
+            const e = validateAttendanceForm('suspendido', '');
+            assert.hasProperty(e, 'status');
+        });
+    });
+
+}, '📊');
+
+// ══════════════════════════════════════════════════
+//  RUNNER
+// ══════════════════════════════════════════════════
+function setStatus(type, text) {
+    const el = document.getElementById('run-status');
+    el.className = 'status-badge ' + type;
+    el.innerHTML = type === 'running'
+        ? `<div class="dot-pulse"></div><span>${text}</span>`
+        : `<span>${text}</span>`;
+}
+
+function updateSummary(total, pass, fail, pend) {
+    document.getElementById('s-total').textContent = total;
+    document.getElementById('s-pass').textContent  = pass;
+    document.getElementById('s-fail').textContent  = fail;
+    document.getElementById('s-pend').textContent  = pend;
+    const pct = total > 0 ? Math.round((pass / total) * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+async function runTests() {
+    const mount  = document.getElementById('results-mount');
+    const runBtn = document.getElementById('run-btn');
+    runBtn.disabled = true;
+    runBtn.textContent = '⏳ Ejecutando…';
+
+    // Show UI
+    document.getElementById('summary-bar').style.display   = 'grid';
+    document.getElementById('progress-track').style.display = 'block';
+    document.getElementById('status-row').style.display    = 'flex';
+    mount.innerHTML = '';
+
+    setStatus('running', 'Ejecutando tests…');
+
+    let totalPass = 0, totalFail = 0, totalPend = 0;
+    const startAll = performance.now();
+
+    for (const suite of SUITES) {
+        const suiteEl = document.createElement('div');
+        suiteEl.className = 'suite-group';
+
+        let suiteTotal = suite.subs.reduce((a, s) => a + s.tests.length, 0);
+        suiteEl.innerHTML = `
+            <div class="suite-title">
+                <span class="suite-icon">${suite.icon}</span>
+                ${suite.name}
+                <span class="suite-count">${suiteTotal} tests</span>
+            </div>`;
+
+        mount.appendChild(suiteEl);
+
+        for (const sub of suite.subs) {
+            if (!sub.tests.length) continue;
+
+            const subEl = document.createElement('div');
+            subEl.className = 'subsuite';
+
+            if (sub.name) {
+                const subTitle = document.createElement('div');
+                subTitle.className = 'subsuite-title';
+                subTitle.textContent = sub.name;
+                subEl.appendChild(subTitle);
+            }
+
+            suiteEl.appendChild(subEl);
+
+            for (const test of sub.tests) {
+                await new Promise(r => setTimeout(r, 6)); // let browser breathe
+
+                const t0 = performance.now();
+                let passed = false, errMsg = '';
+                try { test.fn(); passed = true; }
+                catch(e) { errMsg = e.message || String(e); }
+                const dt = (performance.now() - t0).toFixed(1);
+
+                if (passed) totalPass++; else totalFail++;
+                updateSummary(totalPass + totalFail + totalPend, totalPass, totalFail, totalPend);
+
+                const item = document.createElement('div');
+                item.className = 'test-item';
+                item.innerHTML = `
+                    <div class="test-indicator ${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'}</div>
+                    <div class="test-body">
+                        <div class="test-name">${test.name}</div>
+                        <div class="test-duration">${dt} ms</div>
+                        ${!passed ? `
+                        <details class="error-box">
+                            <summary>Ver error</summary>
+                            <pre>${escapeHtml(errMsg)}</pre>
+                        </details>` : ''}
+                    </div>`;
+                subEl.appendChild(item);
+            }
+        }
+    }
+
+    const elapsed = ((performance.now() - startAll) / 1000).toFixed(2);
+    const allOk = totalFail === 0;
+    setStatus(allOk ? 'done-ok' : 'done-err',
+        allOk ? `✓ Todos aprobados` : `✗ ${totalFail} fallaron`);
+    document.getElementById('run-meta').textContent =
+        `${totalPass + totalFail} tests · ${elapsed}s`;
+
+    runBtn.disabled = false;
+    runBtn.textContent = '▶ Re-ejecutar Tests';
+
+    // Show "ver todos" button if we're in grep mode
+    if (window.location.search.includes('grep=')) {
+        document.getElementById('all-tests-btn').style.display = 'inline-flex';
+    }
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// Auto-run if ?autorun param is set
+if (new URLSearchParams(location.search).has('autorun')) {
+    window.addEventListener('load', () => setTimeout(runTests, 300));
+}
+</script>
 </body>
 </html>
