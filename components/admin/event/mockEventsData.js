@@ -1,5 +1,5 @@
 // Datos de prueba completos — reemplazar con API cuando el backend tenga eventos reales
-export const USE_MOCK_EVENTS = true;
+export const USE_MOCK_EVENTS = false;
 
 const store = {
     events: [

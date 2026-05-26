@@ -445,15 +445,16 @@ export default {
                     this.teams = detail.teams;
                     this.scoreForm = { ...detail.score };
                 } else {
-                    const [players, attendance, fouls] = await Promise.all([
+                    const [players, attendance, fouls, teams] = await Promise.all([
                         api.get(`/events/${this.event.id}/players`),
                         api.get(`/events/${this.event.id}/attendance`),
-                        api.get(`/events/${this.event.id}/fouls`)
+                        api.get(`/events/${this.event.id}/fouls`),
+                        api.get(`/events/${this.event.id}/teams`).catch(() => [])
                     ]);
                     this.players = Array.isArray(players) ? players : [];
                     this.attendance = Array.isArray(attendance) ? attendance : [];
                     this.fouls = Array.isArray(fouls) ? fouls : [];
-                    this.teams = this.deriveTeamsFromPlayers();
+                    this.teams = Array.isArray(teams) && teams.length > 0 ? teams : this.deriveTeamsFromPlayers();
                     try {
                         const result = await api.get(`/events/${this.event.id}/result`);
                         this.scoreForm = { home_score: result.home_score, away_score: result.away_score };
@@ -622,10 +623,20 @@ export default {
             }
         },
 
-        openPlayerStats(player) {
+        async openPlayerStats(player) {
             this.selectedPlayer = player;
-            const existing = this.isMock ? getMockPlayerStats(this.event.id, player.id) : null;
-            const base = existing ? { ...existing } : { ...getDefaultStats(this.sport) };
+            let base = { ...getDefaultStats(this.sport) };
+            if (this.isMock) {
+                const existing = getMockPlayerStats(this.event.id, player.id);
+                if (existing) base = { ...existing };
+            } else {
+                try {
+                    const existing = await api.get(`/players/${player.id}/stats?sport=${this.sport}&event_id=${this.event.id}`);
+                    if (existing) base = { ...existing };
+                } catch {
+                    // Stats not found, use defaults
+                }
+            }
             if (this.sport === 'beisbol' && !base.role) base.role = 'batter';
             this.statsForm = base;
             this.statsErrors = {};
