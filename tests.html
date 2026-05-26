@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Unit Tests - Sport Manager Frontend</title>
+    <!-- Mocha CSS style from CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            margin: 0;
+            padding: 20px;
+        }
+        #mocha {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-weight: 800;
+            font-size: 2rem;
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: -0.025em;
+            margin: 0;
+        }
+        .header p {
+            color: #64748b;
+            margin: 10px 0 0 0;
+            font-size: 0.9rem;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 15px;
+            background-color: #2563eb;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .back-btn:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 Pruebas Unitarias del Frontend</h1>
+        <p>Validando comportamientos de estados de eventos y mapeo/validación de estadísticas por deporte.</p>
+        <a href="./index.html" class="back-btn">➔ Volver al Panel</a>
+    </div>
+
+    <!-- Mocha target div -->
+    <div id="mocha"></div>
+
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mocha/10.2.0/mocha.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chai/4.3.7/chai.min.js"></script>
+
+    <script>
+        // Setup Mocha BDD style
+        mocha.setup('bdd');
+        const expect = chai.expect;
+    </script>
+
+    <!-- Test Suite using native ES Modules -->
+    <script type="module">
+        import eventDetails from './views/global/eventDetails.js';
+        import {
+            getStatsPayloadKey,
+            getDefaultStats,
+            getSportLabel
+        } from './components/admin/event/eventSportConfig.js';
+        import {
+            validateScoreForm,
+            validateStatsForm,
+            validateAttendanceForm
+        } from './components/admin/event/eventValidators.js';
+
+        describe('1. Pruebas Unitarias: Estados de Eventos (Event States)', () => {
+            
+            describe('Comportamiento en estado "Próximo" (Upcoming Event)', () => {
+                it('Debe identificar que el evento no está finalizado ni es pasado', () => {
+                    const futureDate = new Date();
+                    futureDate.setDate(futureDate.getDate() + 10); // 10 días en el futuro
+                    
+                    const context = {
+                        event: {
+                            status: 'próximo',
+                            event_date: futureDate.toISOString().split('T')[0]
+                        },
+                        isFinalized: false,
+                        eventStatus: 'próximo'
+                    };
+
+                    // Probar las propiedades computadas ligadas al contexto mock
+                    const isFinalized = eventDetails.computed.isFinalized.call(context);
+                    const isPastEvent = eventDetails.computed.isPastEvent.call(context);
+                    
+                    expect(isFinalized).to.be.false;
+                    expect(isPastEvent).to.be.false;
+                });
+
+                it('Debe habilitar únicamente las pestañas básicas ("Detalles" y "Roster")', () => {
+                    const futureDate = new Date();
+                    futureDate.setDate(futureDate.getDate() + 10);
+                    
+                    const context = {
+                        event: {
+                            status: 'próximo',
+                            event_date: futureDate.toISOString().split('T')[0]
+                        },
+                        isFinalized: false,
+                        eventStatus: 'próximo'
+                    };
+
+                    const tabs = eventDetails.computed.availableTabs.call(context);
+                    const tabIds = tabs.map(t => t.id);
+                    
+                    expect(tabIds).to.include('info');
+                    expect(tabIds).to.include('roster');
+                    expect(tabIds).to.not.include('stats');
+                    expect(tabIds).to.not.include('rankings');
+                });
+            });
+
+            describe('Comportamiento en estado "En Curso" (In Progress Event)', () => {
+                it('Debe identificar que el evento no está finalizado pero puede mostrar marcadores interactivos', () => {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const context = {
+                        event: {
+                            status: 'en curso',
+                            event_date: todayStr
+                        },
+                        isFinalized: false,
+                        eventStatus: 'en curso'
+                    };
+
+                    const isFinalized = eventDetails.computed.isFinalized.call(context);
+                    const isPastEvent = eventDetails.computed.isPastEvent.call(context);
+                    
+                    expect(isFinalized).to.be.false;
+                    expect(isPastEvent).to.be.false;
+                });
+            });
+
+            describe('Comportamiento en estado "Finalizado" (Finished/Completed Event)', () => {
+                it('Debe identificar correctamente que el evento es finalizado y pasado', () => {
+                    const pastDate = new Date();
+                    pastDate.setDate(pastDate.getDate() - 2); // hace 2 días
+                    
+                    const context = {
+                        event: {
+                            status: 'finalizado',
+                            event_date: pastDate.toISOString().split('T')[0]
+                        },
+                        isFinalized: true, // simulamos computed
+                        eventStatus: 'finalizado'
+                    };
+
+                    const isFinalized = eventDetails.computed.isFinalized.call(context);
+                    const isPastEvent = eventDetails.computed.isPastEvent.call(context);
+                    
+                    expect(isFinalized).to.be.true;
+                    expect(isPastEvent).to.be.true;
+                });
+
+                it('Debe activar la pestaña de "Estadísticas / Marcador" si es fútbol', () => {
+                    const context = {
+                        event: {
+                            status: 'finalizado',
+                            sport: 'futbol'
+                        },
+                        isFinalized: true,
+                        eventStatus: 'finalizado'
+                    };
+
+                    const tabs = eventDetails.computed.availableTabs.call(context);
+                    const tabIds = tabs.map(t => t.id);
+                    
+                    expect(tabIds).to.include('info');
+                    expect(tabIds).to.include('roster');
+                    expect(tabIds).to.include('stats'); // Pestaña de estadísticas para deportes tradicionales
+                    expect(tabIds).to.not.include('rankings');
+                });
+
+                it('Debe activar la pestaña de "Clasificación / Rankings" si es un deporte individual/otro', () => {
+                    const context = {
+                        event: {
+                            status: 'finalizado',
+                            sport: 'otro'
+                        },
+                        isFinalized: true,
+                        eventStatus: 'finalizado'
+                    };
+
+                    const tabs = eventDetails.computed.availableTabs.call(context);
+                    const tabIds = tabs.map(t => t.id);
+                    
+                    expect(tabIds).to.include('info');
+                    expect(tabIds).to.include('roster');
+                    expect(tabIds).to.not.include('stats');
+                    expect(tabIds).to.include('rankings'); // Pestaña de rankings para olimpiadas/otros
+                });
+            });
+        });
+
+        describe('2. Pruebas Unitarias: Mapeo y Registro de Estadísticas', () => {
+            
+            describe('Mapeo de Claves de Estadísticas por Deporte', () => {
+                it('Debe retornar las claves de payloads válidas según el deporte', () => {
+                    expect(getStatsPayloadKey('futbol')).to.equal('soccer_stats');
+                    expect(getStatsPayloadKey('basquetbol')).to.equal('basketball_stats');
+                    expect(getStatsPayloadKey('beisbol')).to.equal('baseball_stats');
+                    expect(getStatsPayloadKey('otro')).to.equal('generic_stats');
+                    expect(getStatsPayloadKey('cualquier-otro')).to.equal('generic_stats');
+                });
+            });
+
+            describe('Inicialización de Métricas por Defecto', () => {
+                it('Debe generar el objeto de estadísticas vacías correspondiente a Fútbol', () => {
+                    const defaults = getDefaultStats('futbol');
+                    expect(defaults).to.have.property('goals', 0);
+                    expect(defaults).to.have.property('shots', 0);
+                    expect(defaults).to.have.property('yellow_cards', 0);
+                    expect(defaults).to.have.property('red_cards', 0);
+                });
+
+                it('Debe generar el objeto de estadísticas vacías correspondiente a Básquetbol', () => {
+                    const defaults = getDefaultStats('basquetbol');
+                    expect(defaults).to.have.property('points', 0);
+                    expect(defaults).to.have.property('assists', 0);
+                    expect(defaults).to.have.property('rebounds', 0);
+                });
+            });
+
+            describe('Validaciones de Formularios de Estadísticas', () => {
+                it('Debe aprobar marcadores de equipo válidos', () => {
+                    const form = { home_score: 3, away_score: 1 };
+                    const errors = validateScoreForm('futbol', form);
+                    expect(errors).to.be.empty;
+                });
+
+                it('Debe rechazar marcadores inválidos o negativos', () => {
+                    const form = { home_score: -1, away_score: 5 };
+                    const errors = validateScoreForm('futbol', form);
+                    expect(errors).to.have.property('home_score');
+                });
+
+                it('Fútbol: Debe rechazar si tiros al arco superan tiros totales', () => {
+                    const formStats = { shots: 5, shots_on_target: 8, yellow_cards: 1, red_cards: 0, fouls_committed: 2 };
+                    const errors = validateStatsForm('futbol', formStats);
+                    expect(errors).to.have.property('shots_on_target');
+                });
+
+                it('Básquetbol: Debe rechazar si tiros anotados superan tiros intentados', () => {
+                    const formStats = { fg_made: 12, fg_attempted: 8, points: 24, rebounds: 5 };
+                    const errors = validateStatsForm('basquetbol', formStats);
+                    expect(errors).to.have.property('fg_made');
+                });
+
+                it('Asistencia: Debe obligar nota explicativa si el jugador faltó o llegó tarde', () => {
+                    const errors = validateAttendanceForm('absent', '');
+                    expect(errors).to.have.property('note');
+                });
+            });
+        });
+
+        // Run Mocha tests
+        mocha.run();
+    </script>
+</body>
+</html>

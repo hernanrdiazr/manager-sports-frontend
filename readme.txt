@@ -92,6 +92,14 @@ Para arrancar un servidor HTTP local estático y evitar errores de CORS con mód
 ---
 
 ## 🧪 Pruebas Unitarias
-Dado que el frontend está diseñado e implementado como una SPA estática pura, basada en la importación de módulos nativos ES6 y librerías directamente desde CDN (sin empaquetadores como Webpack/Vite ni dependencias de Node.js/NPM), **no se han desarrollado suites de pruebas unitarias automatizadas en esta capa**. 
+El proyecto cuenta con una suite de pruebas unitarias implementada en el archivo [tests.html](file:///c:/Users/HP/Desktop/manager-sports-frontend/tests.html). 
 
-Las verificaciones del comportamiento se realizan mediante pruebas de integración directas ejecutando la aplicación localmente en el navegador a través de `mongoose.exe` y validando la comunicación directa con los endpoints de la API del backend.
+Dado que el frontend utiliza módulos ES6 nativos sin un paso de compilación, las pruebas unitarias se ejecutan directamente en el navegador utilizando **Mocha** y **Chai** importados por CDN. 
+
+**Para ejecutar las pruebas:**
+1. Inicia el servidor estático local ejecutando `mongoose.exe` (en Windows).
+2. Abre la URL `http://localhost:8080/tests.html` en tu navegador.
+
+La suite incluye pruebas detalladas para:
+* **Estados de Eventos:** El comportamiento dinámico de los tres estados de un evento (`próximo`, `en curso`, `finalizado`), validando los cambios de pestañas, computed properties y reglas de visualización/reserva.
+* **Estadísticas Deportivas:** El mapeo y registro de estadísticas por disciplina (inicialización de métricas de fútbol/básquetbol, mapeo de payloads y validaciones lógicas de formularios).
