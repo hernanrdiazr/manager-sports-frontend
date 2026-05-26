@@ -14,6 +14,7 @@
             padding: 20px;
         }
         #mocha {
+            position: relative;
             background: white;
             border-radius: 20px;
             padding: 30px;
@@ -53,13 +54,31 @@
         .back-btn:hover {
             background-color: #1d4ed8;
         }
+        .all-tests-btn {
+            display: inline-block;
+            margin-top: 15px;
+            background-color: #64748b;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .all-tests-btn:hover {
+            background-color: #475569;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>🧪 Pruebas Unitarias del Frontend</h1>
         <p>Validando comportamientos de estados de eventos y mapeo/validación de estadísticas por deporte.</p>
-        <a href="./index.html" class="back-btn">➔ Volver al Panel</a>
+        <div style="margin-top: 15px; display: flex; justify-content: center; gap: 10px;">
+            <a href="./index.html" class="back-btn">➔ Volver al Panel</a>
+            <a href="./tests.html" id="all-tests-btn" class="all-tests-btn" style="display: none;">🧪 Ver Todos los Tests</a>
+        </div>
     </div>
 
     <!-- Mocha target div -->
@@ -73,6 +92,13 @@
         // Setup Mocha BDD style
         mocha.setup('bdd');
         const expect = chai.expect;
+
+        // Show/hide "Ver todos los tests" button based on URL search query
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.location.search.includes('grep=')) {
+                document.getElementById('all-tests-btn').style.display = 'inline-block';
+            }
+        });
     </script>
 
     <!-- Test Suite using native ES Modules -->
