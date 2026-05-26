@@ -1,10 +1,23 @@
 // AdminManageEvents.js
 import { api } from '../../../services/api.js';
+import { getSportLabel } from '../event/eventSportConfig.js';
+import adminEventDetail from '../event/adminEventDetail.js';
+import { USE_MOCK_EVENTS, getMockEvents } from '../event/mockEventsData.js';
 
 export default {
-    components: {},
+    components: {
+        adminEventDetail
+    },
     template: `
         <div class="animate-fade-in space-y-6">
+            <!-- Inline Admin Event Live Manager -->
+            <adminEventDetail
+                v-if="selectedEvent"
+                :event="selectedEvent"
+                @close="selectedEvent = null"
+                @updated="loadEvents"
+            />
+
             <!-- Header + Filtros -->
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -14,6 +27,8 @@ export default {
                     </p>
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
+                    <span v-if="useMock" class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700">Modo demo</span>
+                    
                     <!-- Filtro Deporte -->
                     <select 
                         v-model="filterSport"
@@ -140,6 +155,18 @@ export default {
                                 </svg>
                             </button>
 
+                            <!-- Gestionar alineaciones y estadísticas -->
+                            <button 
+                                @click="openLiveManager(event)"
+                                class="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                                title="Gestionar partido en vivo"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                            </button>
+
                             <!-- Toggle estado -->
                             <button 
                                 @click="toggleStatus(event)"
@@ -193,6 +220,7 @@ export default {
     data() {
         return {
             events: [],
+            selectedEvent: null,
             searchQuery: '',
             filterSport: '',
             loading: false,
@@ -201,8 +229,12 @@ export default {
     },
 
     computed: {
+        useMock() {
+            return USE_MOCK_EVENTS;
+        },
         filteredEvents() {
-            return this.events.filter(event => {
+            const list = Array.isArray(this.events) ? this.events : [];
+            return list.filter(event => {
                 const q = this.searchQuery.toLowerCase();
                 const matchesSearch = !q ||
                     (event.name || event.organizer || '').toLowerCase().includes(q) ||
@@ -219,16 +251,24 @@ export default {
     },
 
     methods: {
+        sportLabel(sport) {
+            return getSportLabel(sport);
+        },
+
         async loadEvents() {
             this.loading = true;
             this.loadError = null;
             try {
+                if (USE_MOCK_EVENTS) {
+                    this.events = getMockEvents();
+                    return;
+                }
                 const response = await api.get('/events');
                 this.events = Array.isArray(response) ? response : [];
             } catch (error) {
                 console.error('Error cargando eventos:', error);
-                this.loadError = 'No se pudieron cargar los eventos. Verifica que el backend esté activo.';
-                this.events = [];
+                this.loadError = 'No se pudieron cargar los eventos. ' + (error.message || '');
+                this.events = USE_MOCK_EVENTS ? getMockEvents() : [];
             } finally {
                 this.loading = false;
             }
@@ -305,6 +345,10 @@ export default {
 
         viewDetails(event) {
             this.$emit('view-details', event.id);
+        },
+
+        openLiveManager(event) {
+            this.selectedEvent = event;
         }
     }
 };

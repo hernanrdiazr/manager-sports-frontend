@@ -1,4 +1,8 @@
 import { api } from '../../../services/api.js';
+import {
+    getDefaultStats,
+    getStatsPayloadKey
+} from '../event/eventSportConfig.js';
 
 export default {
     template: `
@@ -453,6 +457,8 @@ export default {
                 ? (this.form.customSport.trim() || 'otro')
                 : this.form.sport;
 
+            const statsKey = getStatsPayloadKey(sportValue);
+
             const payload = {
                 name: this.form.name.trim(),
                 sport: sportValue,
@@ -464,7 +470,18 @@ export default {
                 lon: this.form.lon,
                 total_tickets: parseInt(this.form.totalTickets) || 100,
                 ticket_price: parseFloat(this.form.ticketPrice) || 0,
-                teams: this.form.teams
+                teams: this.form.teams.map(t => ({
+                    name: t.name.trim(),
+                    is_home: t.is_home,
+                    score: 0,
+                    players: t.players.map(p => ({
+                        name: p.name.trim(),
+                        jersey_number: Number(p.jersey_number),
+                        position: p.position || 'N/A',
+                        is_starter: p.is_starter || false,
+                        [statsKey]: getDefaultStats(sportValue)
+                    }))
+                }))
             };
 
             try {

@@ -1,20 +1,55 @@
 import { api } from '../../../services/api.js';
+import { getSportLabel } from '../event/eventSportConfig.js';
+import { USE_MOCK_EVENTS, getMockEvents, getMockPendingReservations, mockApproveReservationById } from '../event/mockEventsData.js';
 
 export default {
     template: `
-        <div class="space-y-6">
+        <div class="space-y-6 animate-fade-in">
             <!-- Header -->
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 class="text-2xl font-black text-slate-900 uppercase italic">Validar Pagos de Reservas</h2>
                     <p class="text-slate-500 text-sm">Verifica las referencias de pago de los usuarios y aprueba la emisión de sus tickets.</p>
                 </div>
-                <button 
-                    @click="loadPending" 
-                    class="bg-white border border-slate-200 text-slate-700 hover:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm hover:shadow transition-all"
-                >
-                    🔄 Recargar
-                </button>
+                <div class="flex items-center gap-2">
+                    <span v-if="useMock" class="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-50 text-amber-700">Modo demo</span>
+                    <button 
+                        @click="loadPending" 
+                        class="bg-white border border-slate-200 text-slate-700 hover:text-slate-900 px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-sm hover:shadow transition-all"
+                    >
+                        🔄 Recargar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-wider">Pendientes</p>
+                    <p class="text-2xl font-black text-slate-900 mt-1">{{ filteredReservations.length }}</p>
+                </div>
+                <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-wider">Boletos por aprobar</p>
+                    <p class="text-2xl font-black text-blue-600 mt-1">{{ totalTickets }}</p>
+                </div>
+                <div class="bg-white rounded-3xl border border-slate-100 p-5 shadow-sm">
+                    <p class="text-xs font-black text-slate-400 uppercase tracking-wider">Monto total</p>
+                    <p class="text-2xl font-black text-emerald-600 mt-1">{{ formatMoney(totalAmount) }}</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3">
+                <select v-model="filterEventId" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-400 cursor-pointer transition-colors">
+                    <option value="">Todos los eventos</option>
+                    <option v-for="e in events" :key="e.id" :value="e.id">{{ e.organizer || e.name }}</option>
+                </select>
+                <select v-model="filterSport" class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-400 cursor-pointer transition-colors">
+                    <option value="">Todos los deportes</option>
+                    <option value="futbol">Fútbol</option>
+                    <option value="beisbol">Béisbol</option>
+                    <option value="basquetbol">Básquetbol</option>
+                </select>
             </div>
 
             <!-- Loading State -->
@@ -23,7 +58,7 @@ export default {
             </div>
 
             <!-- Empty State -->
-            <div v-else-if="reservations.length === 0" class="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm">
+            <div v-else-if="filteredReservations.length === 0" class="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm">
                 <span class="text-5xl block mb-4">🎉</span>
                 <h3 class="text-lg font-black text-slate-900 uppercase">Sin Pagos Pendientes</h3>
                 <p class="text-slate-400 text-sm mt-1 max-w-md mx-auto">Buen trabajo. Todos los comprobantes y reservas han sido procesados y aprobados.</p>
@@ -46,7 +81,7 @@ export default {
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr 
-                                v-for="res in reservations" 
+                                v-for="res in filteredReservations" 
                                 :key="res.id"
                                 class="hover:bg-slate-50/40 transition-colors"
                             >
@@ -63,8 +98,8 @@ export default {
                                     </div>
                                 </td>
                                 <td class="p-4">
-                                    <div class="text-sm font-bold text-slate-800">{{ res.evento_nombre || 'Evento sin nombre' }}</div>
-                                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">{{ res.evento }}</div>
+                                    <div class="text-sm font-bold text-slate-800">{{ res.event_organizer || res.evento_nombre || 'Evento sin nombre' }}</div>
+                                    <div class="text-[10px] font-black text-slate-400 uppercase tracking-wider mt-0.5">{{ sportLabel(res.event_sport || res.evento) }}</div>
                                 </td>
                                 <td class="p-4 text-center">
                                     <span class="text-sm font-black text-slate-800 bg-slate-100 px-2.5 py-1 rounded-lg">
@@ -73,7 +108,7 @@ export default {
                                 </td>
                                 <td class="p-4 text-right">
                                     <span class="text-sm font-black text-emerald-600">
-                                        $ {{ res.total }}
+                                        {{ formatMoney(res.total) }}
                                     </span>
                                 </td>
                                 <td class="p-4 whitespace-nowrap">
@@ -84,9 +119,10 @@ export default {
                                 <td class="p-4 whitespace-nowrap text-center">
                                     <button 
                                         @click="approvePayment(res)"
-                                        class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer"
+                                        :disabled="approvingId === res.id"
+                                        class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                                     >
-                                        Aprobar Pago
+                                        {{ approvingId === res.id ? 'Aprobando...' : 'Aprobar Pago' }}
                                     </button>
                                 </td>
                             </tr>
@@ -99,29 +135,73 @@ export default {
     data() {
         return {
             reservations: [],
-            loading: true
+            events: [],
+            filterEventId: '',
+            filterSport: '',
+            loading: true,
+            approvingId: null
         };
+    },
+    computed: {
+        useMock() {
+            return USE_MOCK_EVENTS;
+        },
+        filteredReservations() {
+            return this.reservations.filter(r => {
+                const matchEvent = !this.filterEventId || r.event_id === Number(this.filterEventId);
+                const sport = r.event_sport || r.evento;
+                const matchSport = !this.filterSport || sport === this.filterSport;
+                return matchEvent && matchSport;
+            });
+        },
+        totalTickets() {
+            return this.filteredReservations.reduce((s, r) => s + (r.cantidad || 0), 0);
+        },
+        totalAmount() {
+            return this.filteredReservations.reduce((s, r) => s + (Number(r.total) || 0), 0);
+        }
     },
     async mounted() {
         await this.loadPending();
     },
     methods: {
+        sportLabel(sport) {
+            return getSportLabel(sport);
+        },
+        formatMoney(amount) {
+            return '$' + Number(amount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        },
         async loadPending() {
             this.loading = true;
             try {
-                const response = await api.get('/admin/reservations/pending');
-                this.reservations = Array.isArray(response) ? response : [];
+                if (USE_MOCK_EVENTS) {
+                    this.events = getMockEvents();
+                    this.reservations = getMockPendingReservations();
+                } else {
+                    const eventsData = await api.get('/events');
+                    this.events = Array.isArray(eventsData) ? eventsData : [];
+                    const pending = await api.get('/admin/reservations/pending');
+                    this.reservations = (Array.isArray(pending) ? pending : []).map(r => ({
+                        ...r,
+                        event_sport: r.evento
+                    }));
+                }
             } catch (error) {
                 console.error("Error cargando reservas pendientes:", error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se pudo cargar la lista de reservas pendientes.',
-                    position: 'top',
-                    toast: true,
-                    showConfirmButton: false,
-                    timer: 3000
-                });
+                if (USE_MOCK_EVENTS) {
+                    this.events = getMockEvents();
+                    this.reservations = getMockPendingReservations();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo cargar la lista de reservas pendientes.',
+                        position: 'top',
+                        toast: true,
+                        showConfirmButton: false,
+                        timer: 3000
+                    });
+                }
             } finally {
                 this.loading = false;
             }
@@ -142,6 +222,7 @@ export default {
             });
 
             if (confirmResult.isConfirmed) {
+                this.approvingId = res.id;
                 try {
                     Swal.fire({
                         title: 'Aprobando pago...',
@@ -151,12 +232,16 @@ export default {
                         }
                     });
 
-                    const response = await api.patch(`/admin/reservations/${res.id}/approve`);
+                    if (USE_MOCK_EVENTS) {
+                        mockApproveReservationById(res.id);
+                    } else {
+                        await api.patch(`/admin/reservations/${res.id}/approve`, {});
+                    }
                     
                     Swal.fire({
                         icon: 'success',
                         title: 'Reserva Aprobada',
-                        text: response.mensaje || 'La reserva ha sido aprobada con éxito.',
+                        text: 'La reserva ha sido aprobada con éxito.',
                         position: 'top',
                         toast: true,
                         showConfirmButton: false,
@@ -174,6 +259,8 @@ export default {
                         showConfirmButton: false,
                         timer: 4000
                     });
+                } finally {
+                    this.approvingId = null;
                 }
             }
         },

@@ -25,7 +25,8 @@ class ApiService {
         }
         
         if (!response.ok) {
-            throw new Error(data.message || data.error || 'Error en la petición');
+            const msg = data.message || data.error || data.mensaje || text || 'Error en la petición';
+            throw new Error(msg);
         }
         
         return data;

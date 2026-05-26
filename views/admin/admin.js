@@ -149,21 +149,24 @@ export default {
     methods: {
         async loadStats() {
             try {
-                // Generar estadísticas directamente desde /events para evitar error 404
-                // ya que /admin/stats aún no existe en el backend
-                const events = await api.get('/events');
-                const eventList = Array.isArray(events) ? events : [];
-                const totalTickets = eventList.reduce((acc, e) => acc + (e.total_tickets || 0), 0);
-                const soldTickets = eventList.reduce((acc, e) => acc + ((e.total_tickets || 0) - (e.available_tickets || 0)), 0);
-                this.stats = {
-                    totalUsers: 0,
-                    totalEvents: eventList.length,
-                    totalTickets: soldTickets,
-                    monthlyRevenue: 0
-                };
+                const stats = await api.get('/admin/stats');
+                this.stats = stats;
             } catch (error) {
-                // Ignorar error si /events falla al inicio
-                console.warn('No se pudieron cargar las estadísticas');
+                console.warn('Fallback to local stats calculation...', error);
+                try {
+                    const events = await api.get('/events');
+                    const eventList = Array.isArray(events) ? events : [];
+                    const totalTickets = eventList.reduce((acc, e) => acc + (e.total_tickets || 0), 0);
+                    const soldTickets = eventList.reduce((acc, e) => acc + ((e.total_tickets || 0) - (e.available_tickets || 0)), 0);
+                    this.stats = {
+                        totalUsers: 0,
+                        totalEvents: eventList.length,
+                        totalTickets: soldTickets,
+                        monthlyRevenue: 0
+                    };
+                } catch (e) {
+                    console.warn('No se pudieron cargar las estadísticas');
+                }
             } finally {
                 this.loading = false;
             }
