@@ -138,11 +138,14 @@
 
             describe('Comportamiento en estado "En Curso" (In Progress Event)', () => {
                 it('Debe identificar que el evento no está finalizado pero puede mostrar marcadores interactivos', () => {
-                    const todayStr = new Date().toISOString().split('T')[0];
+                    const tomorrow = new Date();
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
                     const context = {
                         event: {
                             status: 'en curso',
-                            event_date: todayStr
+                            event_date: tomorrowStr
                         },
                         isFinalized: false,
                         eventStatus: 'en curso'
