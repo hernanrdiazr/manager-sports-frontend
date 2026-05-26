@@ -36,9 +36,17 @@ Contiene los módulos inyectables que forman las piezas clave del sistema intera
 *   **`adminCreateEvents.js`**
     Poderoso formulario *Bulk Insert* guiado por pasos numéricos. Permite registrar simultáneamente toda la estructura de un evento: Configuración general, Equipos participantes, Jugadores detallados, Cupos, y Geolocalización en mapa interactivo. Posee validaciones exhaustivas (nombres de jugadores, fechas mayores a 7 días, cruce lógicos de horas).
 *   **`adminManageEvents.js`**
-    Listado interactivo de eventos usando un diseño de "Tarjetas" modernas. Permite al administrador pausar/reanudar eventos y **cancelarlos (Soft-Delete)**, reflejando el cambio de estado de manera inmediata sin recargar.
+    Listado interactivo de eventos usando un diseño de "Tarjetas" modernas. Permite al administrador pausar/reanudar eventos y **cancelarlos (Soft-Delete)**, reflejando el cambio de estado de manera inmediata sin recargar. Además, permite abrir inline el panel de gestión de estadísticas y alineaciones en vivo (`adminEventDetail.js`).
 *   **`adminReservations.js`**
-    Panel de gestión de taquilla. El administrador puede revisar los comprobantes de pago de los usuarios y dictaminar si "Aprueba" o "Rechaza" la reserva de entradas.
+    Panel de gestión de taquilla. El administrador puede revisar los comprobantes de pago de los usuarios, filtrar por evento/deporte y dictaminar si "Aprueba" o "Rechaza" la reserva de entradas.
+
+### `components/admin/event/` (Gestión en Vivo y Configuración)
+*   **`adminEventDetail.js`**
+    Panel de gestión en vivo. Permite al administrador configurar alineaciones iniciales, actualizar marcadores y registrar eventos de juego en vivo (goles, faltas, asistencias) para cada participante.
+*   **`eventSportConfig.js`**
+    Define las métricas y posiciones válidas por deporte (Fútbol, Béisbol, Básquetbol) para estructurar correctamente las estadísticas enviadas a la API del backend.
+*   **`eventLocationPicker.js` / `eventValidators.js` / `mockEventsData.js`**
+    Componentes y librerías auxiliares para selección de ubicaciones de mapas, validaciones de alineaciones y datos de prueba locales.
 
 ### `components/user/tabs/` (Panel de Usuario)
 *   **`userEvents.js`**
@@ -80,3 +88,10 @@ Contiene los Layouts principales de "Página Completa" que envuelven a los compo
 Para arrancar un servidor HTTP local estático y evitar errores de CORS con módulos ES6:
 *   En Windows: Ejecutar `mongoose.exe`
 *   En Linux: `chmod 0755 $HOME/mongoose_linux` y `$HOME/mongoose_linux -d ./`
+
+---
+
+## 🧪 Pruebas Unitarias
+Dado que el frontend está diseñado e implementado como una SPA estática pura, basada en la importación de módulos nativos ES6 y librerías directamente desde CDN (sin empaquetadores como Webpack/Vite ni dependencias de Node.js/NPM), **no se han desarrollado suites de pruebas unitarias automatizadas en esta capa**. 
+
+Las verificaciones del comportamiento se realizan mediante pruebas de integración directas ejecutando la aplicación localmente en el navegador a través de `mongoose.exe` y validando la comunicación directa con los endpoints de la API del backend.
