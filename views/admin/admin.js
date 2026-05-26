@@ -5,13 +5,17 @@ import adminSidebar from '../../components/admin/adminSidebar.js';
 import adminDashboard from '../../components/admin/tabs/adminDashboard.js';
 import adminCreateEvents from '../../components/admin/tabs/adminCreateEvents.js';
 import adminManageEvents from "../../components/admin/tabs/adminManageEvents.js";
+import adminReservations from "../../components/admin/tabs/adminReservations.js";
+import eventDetails from "../global/eventDetails.js";
 
 export default {
     components: {
         adminSidebar,
         adminDashboard,
         adminCreateEvents,
-        adminManageEvents
+        adminManageEvents,
+        adminReservations,
+        eventDetails
     },
 
     template: `
@@ -91,7 +95,9 @@ export default {
                     <template v-else>
                         <adminDashboard v-if="activeTab === 'dashboard'" :stats="stats" />
                         <adminCreateEvents v-if="activeTab === 'events-create'" />
-                        <adminManageEvents v-if="activeTab === 'events-manage'" />
+                        <adminManageEvents v-if="activeTab === 'events-manage'" @view-details="showEventDetails" />
+                        <adminReservations v-if="activeTab === 'reservations'" />
+                        <eventDetails v-if="activeTab === 'event-details'" :event-id="selectedEventId" @back="activeTab = 'events-manage'" />
                     </template>
                 </main>
             </div>
@@ -105,6 +111,7 @@ export default {
             authError: null,
             sidebarOpen: false,
             activeTab: 'dashboard',
+            selectedEventId: null,
             stats: {
                 totalUsers: 0,
                 totalEvents: 0,
@@ -120,6 +127,8 @@ export default {
                 dashboard: 'Dashboard',
                 'events-create': 'Crear Eventos',
                 'events-manage': 'Gestionar Eventos',
+                reservations: 'Validar Pagos',
+                'event-details': 'Detalles del Evento'
             };
             return titles[this.activeTab] || 'Dashboard';
         }
@@ -140,26 +149,21 @@ export default {
     methods: {
         async loadStats() {
             try {
-                // Intentamos el endpoint de stats del admin
-                const stats = await api.get('/admin/stats');
-                this.stats = stats;
+                // Generar estadísticas directamente desde /events para evitar error 404
+                // ya que /admin/stats aún no existe en el backend
+                const events = await api.get('/events');
+                const eventList = Array.isArray(events) ? events : [];
+                const totalTickets = eventList.reduce((acc, e) => acc + (e.total_tickets || 0), 0);
+                const soldTickets = eventList.reduce((acc, e) => acc + ((e.total_tickets || 0) - (e.available_tickets || 0)), 0);
+                this.stats = {
+                    totalUsers: 0,
+                    totalEvents: eventList.length,
+                    totalTickets: soldTickets,
+                    monthlyRevenue: 0
+                };
             } catch (error) {
-                // El endpoint /admin/stats no existe aún en el backend;
-                // calculamos stats básicas desde /events como fallback
-                try {
-                    const events = await api.get('/events');
-                    const eventList = Array.isArray(events) ? events : [];
-                    const totalTickets = eventList.reduce((acc, e) => acc + (e.total_tickets || 0), 0);
-                    const soldTickets = eventList.reduce((acc, e) => acc + ((e.total_tickets || 0) - (e.available_tickets || 0)), 0);
-                    this.stats = {
-                        totalUsers: 0,
-                        totalEvents: eventList.length,
-                        totalTickets: soldTickets,
-                        monthlyRevenue: 0
-                    };
-                } catch {
-                    // Si falla también, dejamos los valores en 0
-                }
+                // Ignorar error si /events falla al inicio
+                console.warn('No se pudieron cargar las estadísticas');
             } finally {
                 this.loading = false;
             }
@@ -168,7 +172,10 @@ export default {
         handleLogout() {
             authService.logout();
         },
-
+        showEventDetails(eventId) {
+            this.selectedEventId = eventId;
+            this.activeTab = 'event-details';
+        },
         redirectToLogin() {
             window.location.href = '/#/login/admin';
         }

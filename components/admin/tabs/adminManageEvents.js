@@ -2,157 +2,190 @@
 import { api } from '../../../services/api.js';
 
 export default {
+    components: {},
     template: `
-        <div class="animate-fade-in">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-gray-900">Gestionar Eventos</h2>
-                <div class="flex items-center gap-3">
-                    <!-- Filtro por deporte -->
+        <div class="animate-fade-in space-y-6">
+            <!-- Header + Filtros -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-900 uppercase italic tracking-tight">Gestionar Eventos</h2>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">
+                        {{ filteredEvents.length }} evento{{ filteredEvents.length !== 1 ? 's' : '' }} encontrado{{ filteredEvents.length !== 1 ? 's' : '' }}
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Filtro Deporte -->
                     <select 
                         v-model="filterSport"
-                        class="px-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                        class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-400 cursor-pointer transition-colors"
                     >
                         <option value="">Todos los deportes</option>
-                        <option value="futbol">Fútbol</option>
-                        <option value="beisbol">Béisbol</option>
-                        <option value="basquetbol">Básquetbol</option>
-                        <option value="otro">Otro</option>
+                        <option value="futbol">⚽ Fútbol</option>
+                        <option value="beisbol">⚾ Béisbol</option>
+                        <option value="basquetbol">🏀 Básquetbol</option>
+                        <option value="otro">🏆 Otro</option>
                     </select>
-                    
+
                     <!-- Buscador -->
                     <div class="relative">
-                        <svg class="absolute left-3 top-2.5 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        <svg class="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         <input 
                             v-model="searchQuery"
                             type="text"
                             placeholder="Buscar evento..."
-                            class="pl-10 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] w-48"
+                            class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-400 w-44 transition-colors"
                         >
                     </div>
 
-                    <!-- Botón recargar -->
+                    <!-- Recargar -->
                     <button
                         @click="loadEvents"
                         :disabled="loading"
-                        class="p-2 text-slate-400 hover:text-[#2563EB] hover:bg-blue-50 rounded-xl transition-colors"
-                        title="Recargar"
+                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors border border-transparent hover:border-blue-100"
+                        title="Recargar lista"
                     >
-                        <svg class="w-5 h-5" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4" :class="{ 'animate-spin': loading }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Error de carga -->
-            <div v-if="loadError" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm font-medium">
-                ⚠️ {{ loadError }}
+            <!-- Error -->
+            <div v-if="loadError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-xs font-bold flex items-center gap-2">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                {{ loadError }}
             </div>
 
-            <!-- Skeleton de carga -->
-            <div v-if="loading && events.length === 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-                <svg class="animate-spin w-8 h-8 text-[#2563EB] mx-auto mb-3" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                </svg>
-                <p class="text-slate-400 text-sm">Cargando eventos...</p>
+            <!-- Loading skeleton -->
+            <div v-if="loading && events.length === 0" class="grid grid-cols-1 gap-3">
+                <div v-for="i in 4" :key="i" class="bg-white rounded-2xl border border-slate-100 p-5 animate-pulse">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-slate-100 rounded-xl shrink-0"></div>
+                        <div class="flex-1 space-y-2">
+                            <div class="h-3 bg-slate-100 rounded w-1/3"></div>
+                            <div class="h-2 bg-slate-100 rounded w-1/5"></div>
+                        </div>
+                        <div class="h-6 w-16 bg-slate-100 rounded-full"></div>
+                    </div>
+                </div>
             </div>
-            
-            <!-- Tabla de eventos -->
-            <div v-else-if="filteredEvents.length > 0" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="border-b border-gray-100 bg-gray-50/50">
-                                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Evento</th>
-                                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Deporte</th>
-                                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Fecha</th>
-                                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Tickets</th>
-                                <th class="text-left px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Estado</th>
-                                <th class="text-right px-6 py-4 text-xs font-semibold text-slate-400 uppercase">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-50">
-                            <tr v-for="event in filteredEvents" :key="event.id" class="hover:bg-gray-50/50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <p class="text-sm font-medium text-gray-900">{{ event.organizer }}</p>
-                                    <p class="text-xs text-slate-500">{{ event.location }}</p>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-600">
-                                        {{ event.sport }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-slate-500">
+
+            <!-- Lista de eventos (cards) -->
+            <div v-else-if="filteredEvents.length > 0" class="space-y-3">
+                <div
+                    v-for="event in filteredEvents"
+                    :key="event.id"
+                    class="bg-white rounded-2xl border border-slate-100 hover:border-blue-100 hover:shadow-md shadow-sm transition-all duration-200 group"
+                >
+                    <div class="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+                        <!-- Sport icon badge -->
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 bg-slate-50 border border-slate-100">
+                            {{ sportEmoji(event.sport) }}
+                        </div>
+
+                        <!-- Main info -->
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start gap-2 flex-wrap">
+                                <p class="text-sm font-black text-slate-900 uppercase italic truncate">{{ event.name || event.organizer }}</p>
+                                <span 
+                                    class="px-2 py-0.5 text-[9px] font-black rounded-full uppercase tracking-wider border shrink-0"
+                                    :class="statusClass(event.status)"
+                                >
+                                    {{ event.status }}
+                                </span>
+                            </div>
+                            <div class="flex items-center gap-3 mt-1.5 flex-wrap">
+                                <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    {{ event.location }}
+                                </span>
+                                <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                     {{ formatDate(event.event_date) }}
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-slate-500">
-                                        <span class="font-medium text-gray-700">{{ event.available_tickets }}</span>
-                                        <span class="text-slate-400">/{{ event.total_tickets }}</span>
-                                    </div>
-                                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                                        <div 
-                                            class="bg-[#2563EB] h-1.5 rounded-full transition-all"
-                                            :style="{ width: ticketPercentage(event) + '%' }"
-                                        ></div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="px-2.5 py-1 text-xs font-medium rounded-full"
-                                          :class="statusClass(event.status)">
-                                        {{ event.status }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <!-- Cambiar estado -->
-                                        <button 
-                                            @click="toggleStatus(event)"
-                                            class="p-2 rounded-lg transition-colors"
-                                            :class="event.status === 'activo' 
-                                                ? 'text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50' 
-                                                : 'text-green-500 hover:text-green-600 hover:bg-green-50'"
-                                            :title="event.status === 'activo' ? 'Pausar' : 'Activar'"
-                                        >
-                                            <svg v-if="event.status === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                            <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                            </svg>
-                                        </button>
-                                        
-                                        <!-- Eliminar -->
-                                        <button 
-                                            @click="deleteEvent(event)"
-                                            class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Eliminar"
-                                        >
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Tickets progress -->
+                        <div class="sm:w-36 shrink-0">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Entradas</span>
+                                <span class="text-[9px] font-black text-slate-600">
+                                    {{ event.available_tickets }}<span class="text-slate-300">/{{ event.total_tickets }}</span>
+                                </span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div 
+                                    class="h-1.5 rounded-full transition-all duration-500"
+                                    :class="ticketPercentage(event) > 80 ? 'bg-red-400' : ticketPercentage(event) > 50 ? 'bg-amber-400' : 'bg-blue-500'"
+                                    :style="{ width: ticketPercentage(event) + '%' }"
+                                ></div>
+                            </div>
+                            <p class="text-[9px] text-slate-400 font-bold mt-0.5 text-right">{{ ticketPercentage(event) }}% vendido</p>
+                        </div>
+
+                        <!-- Acciones -->
+                        <div class="flex items-center gap-1 shrink-0">
+                            <!-- Ver detalles -->
+                            <button 
+                                @click="viewDetails(event)"
+                                class="group/btn p-2.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all"
+                                title="Ver detalles"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+
+                            <!-- Toggle estado -->
+                            <button 
+                                @click="toggleStatus(event)"
+                                class="p-2.5 rounded-xl transition-all"
+                                :class="event.status === 'activo' 
+                                    ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50' 
+                                    : 'text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50'"
+                                :title="event.status === 'activo' ? 'Pausar evento' : 'Activar evento'"
+                            >
+                                <svg v-if="event.status === 'activo'" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </button>
+
+                            <!-- Eliminar -->
+                            <button 
+                                @click="deleteEvent(event)"
+                                class="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                                title="Eliminar evento"
+                            >
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            
-            <!-- Estado vacío (sin resultados) -->
-            <div v-else-if="!loading" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
-                <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-8 h-8 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                    </svg>
+
+            <!-- Estado vacío -->
+            <div v-else-if="!loading" class="bg-white rounded-3xl border border-dashed border-slate-200 p-16 text-center">
+                <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
+                    {{ searchQuery || filterSport ? '🔍' : '📅' }}
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">No hay eventos</h3>
-                <p class="text-slate-500">{{ searchQuery || filterSport ? 'No hay eventos que coincidan con la búsqueda.' : 'Ve a "Crear Eventos" para publicar el primero.' }}</p>
+                <h3 class="text-sm font-black text-slate-800 uppercase italic mb-1">
+                    {{ searchQuery || filterSport ? 'Sin resultados' : 'Sin eventos registrados' }}
+                </h3>
+                <p class="text-slate-400 text-xs font-medium max-w-xs mx-auto">
+                    {{ searchQuery || filterSport ? 'Prueba con otros filtros o términos de búsqueda.' : 'Ve a "Crear Eventos" para publicar el primero.' }}
+                </p>
+                <button v-if="searchQuery || filterSport" @click="searchQuery = ''; filterSport = ''" class="mt-4 text-blue-600 text-xs font-black uppercase tracking-widest hover:underline">
+                    Limpiar filtros
+                </button>
             </div>
         </div>
     `,
@@ -163,7 +196,7 @@ export default {
             searchQuery: '',
             filterSport: '',
             loading: false,
-            loadError: null
+            loadError: null,
         };
     },
 
@@ -172,12 +205,10 @@ export default {
             return this.events.filter(event => {
                 const q = this.searchQuery.toLowerCase();
                 const matchesSearch = !q ||
-                    (event.organizer || '').toLowerCase().includes(q) ||
+                    (event.name || event.organizer || '').toLowerCase().includes(q) ||
                     (event.location || '').toLowerCase().includes(q) ||
                     (event.sport || '').toLowerCase().includes(q);
-
                 const matchesSport = !this.filterSport || event.sport === this.filterSport;
-
                 return matchesSearch && matchesSport;
             });
         }
@@ -193,11 +224,10 @@ export default {
             this.loadError = null;
             try {
                 const response = await api.get('/events');
-                // La API devuelve un array de eventos
                 this.events = Array.isArray(response) ? response : [];
             } catch (error) {
                 console.error('Error cargando eventos:', error);
-                this.loadError = 'No se pudieron cargar los eventos. Verifica que el backend esté activo en el puerto 8080.';
+                this.loadError = 'No se pudieron cargar los eventos. Verifica que el backend esté activo.';
                 this.events = [];
             } finally {
                 this.loading = false;
@@ -208,9 +238,7 @@ export default {
             if (!dateStr) return '';
             try {
                 return new Date(dateStr).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                    year: 'numeric', month: 'short', day: 'numeric'
                 });
             } catch { return dateStr; }
         },
@@ -223,38 +251,60 @@ export default {
 
         statusClass(status) {
             const map = {
-                'activo': 'bg-green-50 text-green-600',
-                'Por comenzar': 'bg-blue-50 text-blue-600',
-                'En curso': 'bg-yellow-50 text-yellow-600',
-                'Finalizado': 'bg-slate-100 text-slate-500',
-                'pausado': 'bg-red-50 text-red-600',
+                'activo':       'bg-emerald-50 text-emerald-700 border-emerald-200',
+                'pausado':      'bg-amber-50 text-amber-600 border-amber-200',
+                'cancelado':    'bg-red-100 text-red-700 border-red-200',
+                'finalizado':   'bg-slate-100 text-slate-500 border-slate-200',
+                'en curso':     'bg-cyan-50 text-cyan-700 border-cyan-200',
+                'próximo':      'bg-blue-50 text-blue-600 border-blue-200',
             };
-            return map[status] || 'bg-gray-50 text-gray-600';
+            return map[status?.toLowerCase()] || 'bg-slate-100 text-slate-500 border-slate-200';
+        },
+
+        sportEmoji(sport) {
+            const map = { futbol: '⚽', beisbol: '⚾', basquetbol: '🏀' };
+            return map[sport] || '🏆';
         },
 
         async toggleStatus(event) {
             const newStatus = event.status === 'activo' ? 'pausado' : 'activo';
             try {
-                // Se envía la petición al backend para actualizar el estado
                 await api.put(`/events/${event.id}/status`, { status: newStatus });
                 event.status = newStatus;
             } catch (error) {
                 console.error('Error al cambiar el estado:', error);
-                alert('Hubo un problema actualizando el estado en el servidor.');
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Hubo un problema actualizando el estado.', toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
             }
         },
 
         async deleteEvent(event) {
-            if (!confirm(`¿Eliminar el evento "${event.organizer}"? Esta acción no se puede deshacer.`)) return;
-            
+            const result = await Swal.fire({
+                title: '¿Cancelar evento?',
+                html: `<p class="text-sm text-slate-600">Esto cancelará el evento <strong>"${event.name || event.organizer}"</strong> y no estará disponible para nuevas reservas.</p>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No, mantener',
+                buttonsStyling: false,
+                customClass: {
+                    confirmButton: 'bg-red-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase mr-2 cursor-pointer hover:bg-red-700 transition-colors',
+                    cancelButton: 'bg-slate-100 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-black uppercase cursor-pointer hover:bg-slate-200 transition-colors'
+                }
+            });
+            if (!result.isConfirmed) return;
+
             try {
-                // Se envía la petición DELETE al backend
                 await api.delete(`/events/${event.id}`);
-                this.events = this.events.filter(e => e.id !== event.id);
+                event.status = 'cancelado';
+                Swal.fire({ icon: 'success', title: 'Cancelado', text: 'El evento ha sido cancelado correctamente.', toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
             } catch (error) {
                 console.error('Error eliminando evento:', error);
-                alert('No se pudo eliminar el evento en el servidor.');
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo eliminar el evento.', toast: true, position: 'top', showConfirmButton: false, timer: 3000 });
             }
+        },
+
+        viewDetails(event) {
+            this.$emit('view-details', event.id);
         }
     }
 };

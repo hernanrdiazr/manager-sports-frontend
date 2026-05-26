@@ -45,10 +45,12 @@ class AuthService {
     }
 
     logout() {
+        const user = this.getCurrentUser();
+        const redirect = (user && user.role === 'admin') ? '/#/login/admin' : '/#/login';
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('rememberedEmail');
-        window.location.href = '/#/login/admin';
+        window.location.href = redirect;
     }
 
     getCurrentUser() {
@@ -59,7 +61,7 @@ class AuthService {
     isAuthenticated() {
         const token = localStorage.getItem('token');
         const user = this.getCurrentUser();
-        return !!(token && user && user.role === 'admin');
+        return !!(token && user);
     }
 
     getToken() {

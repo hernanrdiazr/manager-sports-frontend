@@ -1,5 +1,10 @@
-// AdminSidebar.js
 export default {
+    props: {
+        modelValue: Boolean,
+        activeTab: String,
+        currentUser: Object
+    },
+    emits: ['update:modelValue', 'tab-change'],
     template: `
         <aside 
             class="fixed inset-y-0 left-0 z-40 w-64 bg-[#0F172A] transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto"
@@ -25,22 +30,33 @@ export default {
             <!-- Navegación -->
             <nav class="mt-6 px-4 space-y-1">
                 <button
-                    v-for="item in menuItems"
-                    :key="item.id"
-                    @click="selectTab(item.id)"
+                    @click="selectTab('events-list')"
                     class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
-                    :class="activeTab === item.id 
-                        ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-500/30' 
+                    :class="activeTab === 'events-list'
+                        ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-500/30'
                         : 'text-slate-300 hover:bg-white/5 hover:text-white'"
                 >
                     <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                        <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
-                    {{ item.label }}
+                    Eventos Disponibles
+                </button>
+
+                <button
+                    @click="selectTab('my-tickets')"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200"
+                    :class="activeTab === 'my-tickets'
+                        ? 'bg-[#2563EB] text-white shadow-lg shadow-blue-500/30'
+                        : 'text-slate-300 hover:bg-white/5 hover:text-white'"
+                >
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z"/>
+                    </svg>
+                    Mis Entradas
                 </button>
             </nav>
 
-            <!-- Footer -->
+            <!-- Footer: perfil del usuario -->
             <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-white/10">
                 <div class="flex items-center gap-3 px-3 py-2">
                     <div class="w-8 h-8 bg-[#2563EB]/20 rounded-full flex items-center justify-center">
@@ -56,51 +72,19 @@ export default {
             </div>
         </aside>
     `,
-    
-    props: {
-        modelValue: Boolean,
-        activeTab: String,
-        currentUser: Object
-    },
-    
-    emits: ['update:modelValue', 'tab-change'],
-    
+
     computed: {
         userInitial() {
-            return this.currentUser?.name?.charAt(0) || 'A';
+            return this.currentUser?.name?.charAt(0).toUpperCase() || 'U';
         },
         userName() {
-            return this.currentUser?.name || 'Admin';
+            return this.currentUser?.name || 'Usuario';
         },
         userEmail() {
             return this.currentUser?.email || '';
-        },
-        menuItems() {
-            return [
-                { 
-                    id: 'dashboard', 
-                    label: 'Dashboard', 
-                    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' 
-                },
-                { 
-                    id: 'events-create', 
-                    label: 'Crear eventos', 
-                    icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' 
-                },
-                { 
-                    id: 'events-manage', 
-                    label: 'Gestionar Eventos', 
-                    icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' 
-                },
-                { 
-                    id: 'reservations', 
-                    label: 'Validar Pagos', 
-                    icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
-                }
-            ];
         }
     },
-    
+
     methods: {
         selectTab(tabId) {
             this.$emit('tab-change', tabId);

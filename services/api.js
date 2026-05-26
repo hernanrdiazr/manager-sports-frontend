@@ -16,7 +16,13 @@ class ApiService {
     }
 
     async handleResponse(response) {
-        const data = await response.json();
+        const text = await response.text();
+        let data;
+        try {
+            data = text ? JSON.parse(text) : {};
+        } catch (e) {
+            data = { error: text || 'Error en la petición' };
+        }
         
         if (!response.ok) {
             throw new Error(data.message || data.error || 'Error en la petición');
@@ -62,6 +68,20 @@ class ApiService {
             return await this.handleResponse(response);
         } catch (error) {
             console.error('PUT Error:', error);
+            throw error;
+        }
+    }
+
+    async patch(endpoint, data) {
+        try {
+            const response = await fetch(`${API_URL}${endpoint}`, {
+                method: 'PATCH',
+                headers: this.getHeaders(),
+                body: data ? JSON.stringify(data) : undefined
+            });
+            return await this.handleResponse(response);
+        } catch (error) {
+            console.error('PATCH Error:', error);
             throw error;
         }
     }

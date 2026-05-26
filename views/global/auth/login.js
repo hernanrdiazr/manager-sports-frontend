@@ -156,41 +156,32 @@ export default {
                 @blur="campoActivo = null"
                 @keyup.enter="manejarLogin"
               />
-            </div>
 
-              <!-- Enlace: ¿Olvidaste tu contraseña? -->
-            <div class="flex justify-end mt-2">
-                <a
-                    href="#"
-                    class="text-xs transition-colors duration-200 hover:underline"
-                    style="color: #06B6D4; font-weight: 500;"
-                    @click.prevent="olvidasteClave"
-                    >
-            ¿Olvidaste tu contraseña?
-            </a>
-  </div>
+              <!-- Toggle ver/ocultar contraseña -->
+              <button
+                type="button"
+                class="flex-shrink-0 focus:outline-none transition-colors duration-200"
+                style="color: #94a3b8;"
+                @click="mostrarClave = !mostrarClave"
+              >
+                <!-- Ojo abierto: clave visible -->
+                <svg v-if="mostrarClave" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <!-- Ojo tachado: clave oculta -->
+                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
 
             <!-- Validación clave -->
             <p v-if="errores.clave" class="text-red-500 text-xs mt-1 pl-1">{{ errores.clave }}</p>
           </div>
 
-          <!-- ===== Mensaje de error global ===== -->
-          <div
-            v-if="mensajeError"
-            class="mb-4 px-4 py-3 rounded-xl text-center text-sm"
-            style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 500;"
-          >
-            {{ mensajeError }}
-          </div>
-
-          <!-- ===== Mensaje de éxito ===== -->
-          <div
-            v-if="mensajeExito"
-            class="mb-4 px-4 py-3 rounded-xl text-center text-sm"
-            style="background: #ecfeff; border: 1px solid #a5f3fc; color: #0891b2; font-weight: 500;"
-          >
-            {{ mensajeExito }}
-          </div>
+          <!-- Mensajes antiguos eliminados en favor de Toasts -->
 
           <!-- ===== Botón CTA Principal: gradiente azul resalta perfectamente sobre blanco ===== -->
           <button
@@ -262,10 +253,8 @@ export default {
       // Estado de foco activo para estilos dinámicos de inputs
       campoActivo: null,
 
-      // Estado de carga y mensajes de feedback
+      // Estado de carga
       cargando: false,
-      mensajeError: '',
-      mensajeExito: '',
 
       // Errores de validación por campo
       errores: {
@@ -302,12 +291,9 @@ export default {
         formularioValido = false;
       }
 
-      // Validar campo clave
+      // Validar campo clave (solo asegurar que no esté vacío en el login)
       if (!this.clave) {
         this.errores.clave = 'La contraseña es obligatoria.';
-        formularioValido = false;
-      } else if (this.clave.length < 6) {
-        this.errores.clave = 'La contraseña debe tener al menos 6 caracteres.';
         formularioValido = false;
       }
 
@@ -320,62 +306,53 @@ export default {
      * Ejecuta validación previa y simula la llamada a la API de autenticación.
      */
     async manejarLogin() {
-      // Limpiar mensajes globales previos
-      this.mensajeError = '';
-      this.mensajeExito = '';
-
       // Ejecutar validación; detener si hay errores
       if (!this.validarFormulario()) return;
 
       // Activar estado de carga
       this.cargando = true;
 
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+
       try {
         // Petición real al backend mediante authService (requireAdmin = false)
         const response = await authService.login(this.correo, this.clave, false);
 
         // Autenticación exitosa
-        this.mensajeExito = '¡Sesión iniciada correctamente! Redirigiendo...';
+        Toast.fire({
+          icon: 'success',
+          title: '¡Sesión iniciada correctamente!'
+        });
 
         console.log('[Olympia] Login exitoso:', response.user);
 
-        // Redirigir a la landing page después de 1.5 segundos
+        // Redirigir al panel de usuario (dashboard) después de 1.5 segundos
         setTimeout(() => {
-          this.$router.push('/');
+          this.$router.push('/dashboard');
         }, 1500);
 
       } catch (error) {
+        let msg = error.message || 'Error al iniciar sesión.';
         if (error.message.includes('Credenciales') || error.message.includes('incorrectas') || error.message.includes('401')) {
-          this.mensajeError = 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
+          msg = 'Correo o contraseña incorrectos. Inténtalo de nuevo.';
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-          this.mensajeError = 'Error de conexión. Verifica que el servidor de la API esté encendido.';
-        } else {
-          this.mensajeError = error.message || 'Error al iniciar sesión. Inténtalo de nuevo.';
+          msg = 'Error de conexión. Verifica que el servidor de la API esté encendido.';
         }
+        Toast.fire({
+          icon: 'error',
+          title: msg
+        });
         console.error('[Olympia] Error de login:', error);
       } finally {
         this.cargando = false;
       }
-    },
-
-    /**
-     * olvidasteClave
-     * Gestiona el flujo de recuperación de contraseña.
-     * Muestra instrucción al usuario (pendiente de integración con backend).
-     */
-    olvidasteClave() {
-      if (!this.correo.trim()) {
-        this.mensajeError = 'Ingresa tu correo electrónico primero para recuperar tu contraseña.';
-        this.campoActivo = 'correo';
-        return;
-      }
-      this.mensajeError = '';
-      this.mensajeExito = `Se han enviado instrucciones de recuperación a: ${this.correo}`;
-
-      // Aquí iría la llamada real al endpoint de recuperación:
-      // await api.recuperarClave(this.correo);
-      console.log('[Olympia] Recuperación de clave solicitada para:', this.correo);
-    },
+    }
 
   },
 };

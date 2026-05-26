@@ -6,6 +6,8 @@ import Login from './views/global/auth/login.js';
 import Register from './views/global/auth/register.js';
 import HomeView from './views/global/home.js';
 import AdminLogin from './views/global/auth/adminLogin.js';
+import User from './views/user/user.js';
+// EventDetails will be imported as subcomponents inside dashboards
 
 // Componentes de imágenes
 import logo from './components/images/logo.js';
@@ -30,8 +32,14 @@ const routes = [
                 path: '', 
                 component: HomeView,
                 meta: { guest: true }
-            },
+            }
         ]
+    },
+
+    {
+        path: '/dashboard',
+        component: User,
+        meta: { requiresAuth: true }
     },
     { 
         path: '/login/admin', 
@@ -75,7 +83,8 @@ router.beforeEach((to, from, next) => {
     // Rutas protegidas
     if (to.matched.some(record => record.meta.requiresAuth)) {
         if (!isAuthenticated) {
-            next('/login/admin');
+            const loginPath = to.path.startsWith('/admin') ? '/login/admin' : '/login';
+            next(loginPath);
             return;
         }
         
@@ -91,7 +100,11 @@ router.beforeEach((to, from, next) => {
     // Rutas para invitados
     if (to.matched.some(record => record.meta.guest)) {
         if (isAuthenticated) {
-            next('/admin');
+            if (currentUser && currentUser.role === 'admin') {
+                next('/admin');
+            } else {
+                next('/dashboard');
+            }
             return;
         }
     }

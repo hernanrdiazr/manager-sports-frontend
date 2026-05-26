@@ -223,9 +223,17 @@ export default {
                 </div>
 
                 <!-- Footer del formulario -->
-                <p class="text-center mt-6 text-slate-400 text-xs font-medium">
-                    © 2026 Panel de Administración. Todos los derechos reservados.
-                </p>
+                <div class="text-center mt-6 space-y-2">
+                    <p class="text-slate-400 text-xs font-medium">
+                        © 2026 Panel de Administración. Todos los derechos reservados.
+                    </p>
+                    <router-link to="/" class="inline-flex items-center gap-1.5 text-slate-400 hover:text-[#06B6D4] text-xs font-medium transition-colors duration-200">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                        </svg>
+                        Ir a la página de inicio
+                    </router-link>
+                </div>
             </div>
         </div>
     `,

@@ -139,7 +139,6 @@ export default {
         </router-link>
       </div>
     </section>
-    </div>
   `,
   data() {
     return {

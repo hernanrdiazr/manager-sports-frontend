@@ -291,23 +291,7 @@ export default {
             <p v-if="errores.confirmarClave" class="text-red-500 text-xs mt-1 pl-1">{{ errores.confirmarClave }}</p>
           </div>
  
-          <!-- ===== Mensaje de error global ===== -->
-          <div
-            v-if="mensajeError"
-            class="mb-4 px-4 py-3 rounded-xl text-center text-sm"
-            style="background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; font-weight: 500;"
-          >
-            {{ mensajeError }}
-          </div>
- 
-          <!-- ===== Mensaje de éxito ===== -->
-          <div
-            v-if="mensajeExito"
-            class="mb-4 px-4 py-3 rounded-xl text-center text-sm"
-            style="background: #ecfeff; border: 1px solid #a5f3fc; color: #0891b2; font-weight: 500;"
-          >
-            {{ mensajeExito }}
-          </div>
+          <!-- Mensajes antiguos eliminados en favor de Toasts -->
  
           <!-- ===== Botón CTA: "Crear mi cuenta" ===== -->
           <button
@@ -402,8 +386,6 @@ export default {
 
       // Estado de la solicitud
       cargando: false,
-      mensajeError: '',
-      mensajeExito: '',
 
       // Errores de validación por campo
       errores: {
@@ -453,11 +435,12 @@ export default {
       }
 
       // — Validar contraseña
+      const regexClave = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/;
       if (!this.clave) {
         this.errores.clave = 'La contraseña es obligatoria.';
         formularioValido = false;
-      } else if (this.clave.length < 6) {
-        this.errores.clave = 'La contraseña debe tener al menos 6 caracteres.';
+      } else if (!regexClave.test(this.clave)) {
+        this.errores.clave = 'Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 símbolo (@$!%*?&.).';
         formularioValido = false;
       }
 
@@ -479,15 +462,19 @@ export default {
      * Gestiona los estados de carga, éxito y error.
      */
     async manejarRegistro() {
-      // Limpiar mensajes globales previos
-      this.mensajeError = '';
-      this.mensajeExito = '';
-
       // Detener ejecución si hay errores de validación
       if (!this.validarFormulario()) return;
 
       // Activar estado de carga
       this.cargando = true;
+
+      const Toast = Swal.mixin({
+        toast: true,
+        position: 'top',
+        showConfirmButton: false,
+        timer: 3500,
+        timerProgressBar: true,
+      });
 
       try {
         // Petición real al backend para registrar al usuario
@@ -498,7 +485,10 @@ export default {
         });
 
         // Registro exitoso: Mostrar mensaje agradable
-        this.mensajeExito = '¡Cuenta creada exitosamente! Iniciando sesión...';
+        Toast.fire({
+          icon: 'success',
+          title: '¡Cuenta creada exitosamente!'
+        });
 
         console.log('[Olympia] Registro exitoso para:', this.correo);
 
@@ -515,28 +505,33 @@ export default {
         // Intentar Auto-Login para una experiencia premium impecable!
         try {
           await authService.login(userEmail, userPass, false);
-          this.mensajeExito = '¡Sesión iniciada correctamente! Redirigiendo...';
+          Toast.fire({
+            icon: 'success',
+            title: '¡Bienvenido! Acceso concedido.'
+          });
 
           setTimeout(() => {
-            this.$router.push('/');
+            this.$router.push('/dashboard');
           }, 1500);
         } catch (loginErr) {
           console.warn('[Olympia] Auto-login falló tras el registro, redirigiendo a login:', loginErr);
-          this.mensajeExito = '¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...';
-
           setTimeout(() => {
             this.$router.push('/login');
           }, 2000);
         }
 
       } catch (error) {
-        if (error.message.includes('409') || error.message.includes('ya existe') || error.message.includes('Conflict')) {
-          this.mensajeError = 'El correo electrónico ya está registrado. Intenta iniciar sesión.';
+        let msg = error.message || 'Ocurrió un error al crear la cuenta.';
+        if (error.message.includes('409') || error.message.includes('ya existe') || error.message.includes('Conflict') || error.message.includes('Duplicate')) {
+          msg = 'El correo electrónico ya está registrado.';
         } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-          this.mensajeError = 'Error de conexión. Verifica que el servidor de la API esté encendido.';
-        } else {
-          this.mensajeError = error.message || 'Ocurrió un error al crear la cuenta. Inténtalo de nuevo.';
+          msg = 'Error de conexión. Verifica que el servidor de la API esté encendido.';
         }
+        
+        Toast.fire({
+          icon: 'error',
+          title: msg
+        });
         console.error('[Olympia] Error de registro:', error);
       } finally {
         this.cargando = false;
