@@ -143,8 +143,10 @@ export default {
     
     methods: {
         async loadStats() {
-            try {
-                const stats = await api.get('/admin/stats');
+            try {   
+                const stats = {};
+                stats.indicatorsGestion = await api.get('/admin/stats/indicatorsGestion?start_date=2025-06-01&end_date=2025-06-30&sport=beisbol');
+                stats.eventsHistory = await api.get('/admin/stats/eventsHistory?start_date=2025-05-01&end_date=2025-05-30&sport=futbol');
                 this.stats = stats;
             } catch (error) {
                 console.error('Error cargando stats:', error);
