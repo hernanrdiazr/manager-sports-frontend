@@ -2,23 +2,23 @@
 import { api } from './api.js';
 
 class AuthService {
-    async login(email, password) {
+    async login(email, password, requireAdmin = false) {
         try {
-            const response = await api.post('/login', { 
-                email, 
-                password 
+            const response = await api.post('/login', {
+                email,
+                password
             });
-            
+
             // La respuesta debe incluir token y user
             if (response.token && response.user) {
-                // Verificar que sea admin
-                if (response.user.role !== 'admin') {
+                // Verificar si se requiere admin
+                if (requireAdmin && response.user.role !== 'admin') {
                     throw new Error('Acceso denegado. Solo administradores.');
                 }
-                
+
                 localStorage.setItem('token', response.token);
                 localStorage.setItem('user', JSON.stringify(response.user));
-                
+
                 return response;
             } else {
                 throw new Error('Respuesta del servidor incompleta');
@@ -32,7 +32,7 @@ class AuthService {
     async register(userData) {
         try {
             const response = await api.post('/register', userData);
-            
+
             if (response.token && response.user) {
                 localStorage.setItem('token', response.token);
                 localStorage.setItem('user', JSON.stringify(response.user));
@@ -45,10 +45,12 @@ class AuthService {
     }
 
     logout() {
+        const user = this.getCurrentUser();
+        const redirect = (user && user.role === 'admin') ? '/#/login/admin' : '/#/login';
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('rememberedEmail');
-        window.location.href = '/#/login/admin';
+        window.location.href = redirect;
     }
 
     getCurrentUser() {
@@ -59,7 +61,7 @@ class AuthService {
     isAuthenticated() {
         const token = localStorage.getItem('token');
         const user = this.getCurrentUser();
-        return !!(token && user && user.role === 'admin');
+        return !!(token && user);
     }
 
     getToken() {
