@@ -1,4 +1,13 @@
 export default {
+    data() {
+        return {
+            footerLinks: [
+                { label: 'Privacidad', to: '/info/privacidad' },
+                { label: 'Términos', to: '/info/terminos' },
+                { label: 'Soporte', to: '/info/soporte' }
+            ]
+        };
+    },
     template: `
     <footer class="relative z-10 bg-[#0F172A] py-12">
       <div class="max-w-7xl mx-auto px-6 sm:px-10">
@@ -13,15 +22,15 @@ export default {
           </div>
 
           <div class="flex gap-8">
-            <a
-              v-for="item in ['Privacidad', 'Términos', 'Soporte']"
-              :key="item"
-              href="#"
+            <router-link
+              v-for="item in footerLinks"
+              :key="item.label"
+              :to="item.to"
               class="text-slate-400 hover:text-white text-sm transition-colors"
               style="font-weight: 500"
             >
-              {{ item }}
-            </a>
+              {{ item.label }}
+            </router-link>
           </div>
 
           <p class="text-slate-500 text-xs" style="font-weight: 500">

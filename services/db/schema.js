@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE TABLE IF NOT EXISTS events (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     name              TEXT,
-    sport             TEXT,  -- 'futbol', 'beisbol', 'basquetbol', 'otro'
+    sport             TEXT,  -- 'futbol', 'beisbol', 'basquetbol'
     event_date        TEXT,  -- YYYY-MM-DD
     start_time        DATETIME,
     end_time          DATETIME,
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS events (
     total_tickets     INTEGER NOT NULL DEFAULT 0,
     available_tickets INTEGER NOT NULL DEFAULT 0,
     ticket_price      REAL NOT NULL DEFAULT 0.00,
-    status            TEXT DEFAULT 'activo',
+    status            TEXT DEFAULT 'próximo',
     created_at        DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -131,19 +131,6 @@ CREATE TABLE IF NOT EXISTS basketball_player_stats (
     three_attempted INTEGER DEFAULT 0,
     ft_made         INTEGER DEFAULT 0,
     ft_attempted    INTEGER DEFAULT 0,
-    UNIQUE(player_id, event_id)
-);
-
--- 8. Stats genéricas por jugador por evento (otros deportes)
-CREATE TABLE IF NOT EXISTS generic_player_stats (
-    id         INTEGER PRIMARY KEY AUTOINCREMENT,
-    player_id  INTEGER REFERENCES players(id) ON DELETE CASCADE,
-    event_id   INTEGER REFERENCES events(id) ON DELETE CASCADE,
-    score      REAL DEFAULT 0,
-    score_unit TEXT DEFAULT 'points',
-    rank       INTEGER DEFAULT 0,
-    penalties  INTEGER DEFAULT 0,
-    extra_data TEXT DEFAULT '{}',
     UNIQUE(player_id, event_id)
 );
 

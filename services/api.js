@@ -114,38 +114,24 @@ class ApiService {
             if (match) {
                 const id = parseInt(match[1], 10);
                 
-                // Recuperar detalle formateado exactamente como lo hacía Go
                 const event = await eventsRepository.getById(id);
                 if (!event) throw new Error("Evento no encontrado");
 
-                const now = new Date();
-                const startTime = new Date(event.start_time);
-                const endTime = new Date(event.end_time);
-
-                if (now < startTime) {
-                    event.status = "Próximo";
-                } else if (now > endTime) {
-                    event.status = "Finalizado";
-                } else {
-                    event.status = "En curso";
-                    event.available_tickets = 0;
-                }
-
                 const stats = await scoreRepository.getFullMatchStats(id);
 
-                if (event.status !== "Finalizado") {
-                    return {
-                        mensaje: "El partido aún no ha finalizado. Las estadísticas detalladas están ocultas.",
-                        evento: event,
-                        estadisticas: stats
-                    };
-                }
-
                 return {
-                    mensaje: "¡Partido finalizado! (Estadísticas en construcción para la Fase 4)",
+                    mensaje: event.status === "finalizado"
+                        ? "Partido finalizado"
+                        : "El partido aún no ha finalizado. Las estadísticas detalladas están ocultas.",
                     evento: event,
                     estadisticas: stats
                 };
+            }
+
+            match = path.match(/^\/events\/(\d+)\/teams\/?$/);
+            if (match) {
+                const eventId = parseInt(match[1], 10);
+                return await eventsRepository.getTeamsByEvent(eventId);
             }
 
             match = path.match(/^\/events\/(\d+)\/result\/?$/);
@@ -170,6 +156,12 @@ class ApiService {
             if (match) {
                 const eventId = parseInt(match[1], 10);
                 return await foulsRepository.getByEvent(eventId);
+            }
+
+            match = path.match(/^\/events\/(\d+)\/reservations\/summary\/?$/);
+            if (match) {
+                const id = parseInt(match[1], 10);
+                return await eventsRepository.getReservationSummary(id);
             }
 
             // 10. GET /teams/{teamID}/players
@@ -299,6 +291,9 @@ class ApiService {
             if (match) {
                 const id = parseInt(match[1], 10);
                 await eventsRepository.updateStatus(id, data.status);
+                if (data.status === 'en curso') {
+                    await eventsRepository.updateStartTime(id);
+                }
                 return {
                     mensaje: `Estado del evento actualizado a ${data.status}`
                 };

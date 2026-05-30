@@ -1,20 +1,22 @@
-// services/db/eventsRepository.js - Repositorio para la Gestión de Eventos Deportivos en SQLite
-
 import { selectAll, selectOne, run, transaction, exec } from './database.js';
 
 class EventsRepository {
-    /**
-     * Obtiene todos los eventos de la base de datos, marcando automáticamente como finalizados
-     * aquellos cuya fecha ya pasó.
-     * @returns {Promise<Array<Object>>} Lista de eventos
-     */
-    async getAll() {
-        // Marcar automáticamente como 'finalizado' si la fecha del evento ya pasó
+    async _syncStatuses() {
         await exec(`
             UPDATE events SET status = 'finalizado'
-            WHERE date(event_date) < date('now', 'localtime') AND status != 'finalizado'
+            WHERE status NOT IN ('cancelado')
+              AND datetime(end_time) < datetime('now', 'localtime')
         `);
+        await exec(`
+            UPDATE events SET status = 'en curso'
+            WHERE status = 'próximo'
+              AND datetime(start_time) <= datetime('now', 'localtime')
+              AND datetime(end_time) >= datetime('now', 'localtime')
+        `);
+    }
 
+    async getAll() {
+        await this._syncStatuses();
         return await selectAll(`
             SELECT id, name, sport, event_date, start_time, end_time,
                    location, lat, lon, total_tickets, available_tickets, ticket_price, status, created_at
@@ -23,31 +25,17 @@ class EventsRepository {
         `);
     }
 
-    /**
-     * Obtiene solo los eventos activos futuros
-     * @returns {Promise<Array<Object>>} Lista de eventos activos
-     */
     async getActive() {
-        // Actualizar estados antes de consultar
-        await exec(`
-            UPDATE events SET status = 'finalizado'
-            WHERE date(event_date) < date('now', 'localtime') AND status != 'finalizado'
-        `);
-
+        await this._syncStatuses();
         return await selectAll(`
             SELECT id, name, sport, event_date, start_time, end_time,
                    location, lat, lon, total_tickets, available_tickets, ticket_price, status, created_at
             FROM events
-            WHERE status != 'finalizado' AND date(event_date) >= date('now', 'localtime')
+            WHERE status NOT IN ('finalizado', 'cancelado')
             ORDER BY event_date ASC
         `);
     }
 
-    /**
-     * Busca un evento por su ID
-     * @param {number} id ID del evento
-     * @returns {Promise<Object|null>} Evento o null
-     */
     async getById(id) {
         return await selectOne(`
             SELECT id, name, sport, event_date, start_time, end_time,
@@ -56,37 +44,61 @@ class EventsRepository {
         `, [id]);
     }
 
-    /**
-     * Actualiza el estado de un evento y cancela sus reservas en cascada si es necesario
-     * @param {number} id ID del evento
-     * @param {string} status Nuevo estado ('activo', 'pausado', 'finalizado', 'cancelado')
-     */
-    async updateStatus(id, status) {
-        return await transaction(async () => {
-            // 1. Actualizar el estado del evento
-            await run("UPDATE events SET status = ? WHERE id = ?;", [status, id]);
+    async getTeamsByEvent(eventId) {
+        return await selectAll(`
+            SELECT t.id, t.name, et.is_home, et.score
+            FROM teams t
+            JOIN event_teams et ON t.id = et.team_id
+            WHERE et.event_id = ?
+        `, [eventId]);
+    }
 
-            // 2. Si el evento se cancela, cancelar automáticamente todas las reservas asociadas
+    async updateStatus(id, status) {
+        const validTransitions = {
+            'próximo': ['en curso', 'cancelado'],
+            'en curso': ['finalizado', 'cancelado'],
+            'finalizado': [],
+            'cancelado': []
+        };
+
+        const current = await selectOne("SELECT status FROM events WHERE id = ?", [id]);
+        if (!current) throw new Error("Evento no encontrado");
+        const allowed = validTransitions[current.status] || [];
+        if (!allowed.includes(status)) {
+            throw new Error(`No se puede cambiar de "${current.status}" a "${status}"`);
+        }
+
+        return await transaction(async () => {
             if (status === "cancelado") {
                 await run(`
+                    UPDATE events SET status = 'cancelado',
+                        available_tickets = available_tickets + (
+                            SELECT COALESCE(SUM(ticket_count), 0) FROM reservations
+                            WHERE event_id = ? AND status IN ('pendiente', 'aprobado')
+                        )
+                    WHERE id = ?
+                `, [id, id]);
+                await run(`
                     UPDATE reservations SET status = 'cancelada'
-                    WHERE event_id = ? AND status != 'cancelada'
+                    WHERE event_id = ? AND status IN ('pendiente', 'aprobado')
                 `, [id]);
+            } else {
+                await run("UPDATE events SET status = ? WHERE id = ?;", [status, id]);
             }
         });
     }
 
-    /**
-     * Elimina un evento (alias para marcar como cancelado)
-     * @param {number} id ID del evento
-     */
+    async updateStartTime(id) {
+        await run(`
+            UPDATE events SET start_time = strftime('%Y-%m-%dT%H:%M:%S', 'now', 'localtime')
+            WHERE id = ?
+        `, [id]);
+    }
+
     async softDelete(id) {
         return await this.updateStatus(id, "cancelado");
     }
 
-    /**
-     * Inserta estadísticas de equipo basadas en el deporte
-     */
     async _insertTeamStats(sport, eventId, teamId, teamPayload) {
         const sportLower = sport.toLowerCase();
         if (sportLower === 'futbol') {
@@ -121,9 +133,6 @@ class EventsRepository {
         }
     }
 
-    /**
-     * Inserta estadísticas de jugador basadas en el deporte
-     */
     async _insertPlayerStats(sport, eventId, playerId, playerPayload) {
         const sportLower = sport.toLowerCase();
         if (sportLower === 'futbol') {
@@ -168,34 +177,18 @@ class EventsRepository {
                 s.blocks || 0, s.turnovers || 0, s.fouls || 0, s.fg_made || s.fieldGoalsMade || 0, s.fg_attempted || s.fieldGoalsAtt || 0,
                 s.three_made || s.threesMade || 0, s.three_attempted || s.threesAtt || 0, s.ft_made || s.freeThrowsMade || 0, s.ft_attempted || s.freeThrowsAtt || 0
             ]);
-        } else {
-            // "otro" deporte
-            const s = playerPayload.generic_stats || playerPayload.genericStats || {};
-            const extraDataStr = typeof s.extra_data === 'object' ? JSON.stringify(s.extra_data) : (s.extra_data || '{}');
-            await run(`
-                INSERT INTO generic_player_stats (player_id, event_id, score, score_unit, rank, penalties, extra_data)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            `, [
-                playerId, eventId, s.score || 0, s.score_unit || s.scoreUnit || 'points', s.rank || 0, s.penalties || 0, extraDataStr
-            ]);
         }
     }
 
-    /**
-     * Crea un evento completo con equipos, jugadores y estadísticas en una sola transacción
-     * @param {Object} payload Payload completo del evento
-     * @returns {Promise<number>} ID del evento creado
-     */
     async createFull(payload) {
         return await transaction(async () => {
             const totalTickets = payload.total_tickets !== undefined ? payload.total_tickets : (payload.totalTickets || 0);
             const ticketPrice = payload.ticket_price !== undefined ? payload.ticket_price : (payload.ticketPrice || 0);
 
-            // 1. Insertar el evento principal
             const eventResult = await run(`
                 INSERT INTO events 
                     (name, sport, event_date, start_time, end_time, location, lat, lon, total_tickets, available_tickets, ticket_price, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo')
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'próximo')
             `, [
                 payload.name, payload.sport, payload.event_date || payload.eventDate,
                 payload.start_time || payload.startTime, payload.end_time || payload.endTime,
@@ -211,17 +204,14 @@ class EventsRepository {
 
             const teams = payload.teams || [];
 
-            // 2. Procesar los equipos
             for (const team of teams) {
                 let teamId = team.id || team.ID || 0;
                 const score = team.score !== undefined ? team.score : (team.Score || 0);
                 const isHome = team.is_home || team.isHome ? 1 : 0;
 
                 if (teamId > 0) {
-                    // Actualizar el deporte de un equipo existente
                     await run("UPDATE teams SET sport = ? WHERE id = ?;", [payload.sport, teamId]);
                 } else {
-                    // Crear un equipo nuevo
                     const teamResult = await run(`
                         INSERT INTO teams (event_id, name, is_home, sport)
                         VALUES (?, ?, ?, ?)
@@ -229,16 +219,13 @@ class EventsRepository {
                     teamId = teamResult.lastInsertRowId;
                 }
 
-                // Registrar relación en event_teams
                 await run(`
                     INSERT INTO event_teams (event_id, team_id, is_home, score)
                     VALUES (?, ?, ?, ?)
                 `, [eventId, teamId, isHome, score]);
 
-                // Insertar estadísticas de equipo
                 await this._insertTeamStats(payload.sport, eventId, teamId, team);
 
-                // Guardar variables locales de scores y IDs
                 if (isHome) {
                     homeTeamId = teamId;
                     homeScore = score;
@@ -247,11 +234,9 @@ class EventsRepository {
                     awayScore = score;
                 }
 
-                // 3. Procesar Jugadores
                 const players = team.players || team.Players || [];
 
                 if (team.id > 0 || team.ID > 0) {
-                    // Cargar jugadores existentes del equipo y asociarlos a este evento
                     const existingPlayers = await selectAll(`
                         SELECT id, name, jersey_number, position, is_starter 
                         FROM players 
@@ -266,7 +251,6 @@ class EventsRepository {
                         `, [p.id, eventId]);
                     }
                 } else {
-                    // Insertar nuevos jugadores desde cero
                     for (const player of players) {
                         const jerseyNumber = player.jersey_number !== undefined ? player.jersey_number : (player.jerseyNumber || 0);
                         const isStarter = player.is_starter || player.isStarter ? 1 : 0;
@@ -278,10 +262,8 @@ class EventsRepository {
 
                         const playerId = playerResult.lastInsertRowId;
 
-                        // Guardar estadísticas del jugador
                         await this._insertPlayerStats(payload.sport, eventId, playerId, player);
 
-                        // Asistencia por defecto
                         await run(`
                             INSERT INTO player_attendance (player_id, event_id, status)
                             VALUES (?, ?, 'present')
@@ -290,7 +272,6 @@ class EventsRepository {
                 }
             }
 
-            // 4. Registrar el marcador final oficial en match_results
             await run(`
                 INSERT INTO match_results (event_id, home_team_id, away_team_id, home_score, away_score)
                 VALUES (?, ?, ?, ?, ?)
@@ -298,6 +279,19 @@ class EventsRepository {
 
             return eventId;
         });
+    }
+    async getReservationSummary(eventId) {
+        return await selectOne(`
+            SELECT 
+                COUNT(*) as total_reservations,
+                COALESCE(SUM(ticket_count), 0) as total_tickets,
+                COUNT(CASE WHEN status = 'pendiente' THEN 1 END) as pending_reservations,
+                COALESCE(SUM(CASE WHEN status = 'pendiente' THEN ticket_count END), 0) as pending_tickets,
+                COUNT(CASE WHEN status = 'aprobado' THEN 1 END) as approved_reservations,
+                COALESCE(SUM(CASE WHEN status = 'aprobado' THEN ticket_count END), 0) as approved_tickets,
+                COALESCE(SUM(CASE WHEN status IN ('pendiente', 'aprobado') THEN total_price END), 0) as total_revenue
+            FROM reservations WHERE event_id = ?
+        `, [eventId]);
     }
 }
 

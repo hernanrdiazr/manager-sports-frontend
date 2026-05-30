@@ -1,8 +1,7 @@
 export const SPORT_LABELS = {
     futbol: 'Fútbol',
     beisbol: 'Béisbol',
-    basquetbol: 'Básquetbol',
-    otro: 'Otro'
+    basquetbol: 'Básquetbol'
 };
 
 export const ATTENDANCE_STATUSES = [
@@ -41,10 +40,6 @@ export const PLAYER_POSITIONS = {
         { value: 'SF', label: 'Alero (SF)' },
         { value: 'PF', label: 'Ala-pívot (PF)' },
         { value: 'C', label: 'Pívot (C)' }
-    ],
-    otro: [
-        { value: 'A', label: 'Participante A' },
-        { value: 'B', label: 'Participante B' }
     ]
 };
 
@@ -68,10 +63,6 @@ export const FOUL_TYPES = {
         { value: 'personal', label: 'Personal' },
         { value: 'technical', label: 'Técnica' },
         { value: 'flagrant', label: 'Flagrante' }
-    ],
-    otro: [
-        { value: 'penalty', label: 'Penalización' },
-        { value: 'warning', label: 'Advertencia' }
     ]
 };
 
@@ -127,16 +118,6 @@ const STAT_FIELDS_BASE = {
         { key: 'three_attempted', label: 'Tripletes intentados', min: 0, max: 25, group: 'tiros' },
         { key: 'ft_made', label: 'Tiros libres anotados', min: 0, max: 20, group: 'tiros' },
         { key: 'ft_attempted', label: 'Tiros libres intentados', min: 0, max: 25, group: 'tiros' }
-    ],
-    otro: [
-        { key: 'score', label: 'Puntuación', type: 'float', min: 0, max: 9999, group: 'general' },
-        { key: 'score_unit', label: 'Unidad', type: 'select', options: ['pts', 'time', 'rank'], optionLabels: [
-            { value: 'pts', label: 'Puntos' },
-            { value: 'time', label: 'Tiempo' },
-            { value: 'rank', label: 'Posición' }
-        ], group: 'general' },
-        { key: 'rank', label: 'Posición final', min: 1, max: 100, group: 'general' },
-        { key: 'penalties', label: 'Penalizaciones', min: 0, max: 50, group: 'general' }
     ]
 };
 
@@ -154,16 +135,109 @@ const STAT_GROUP_LABELS = {
     tiros: 'Tiros de campo'
 };
 
+export const STANDARD_TEAMS = {
+    futbol: {
+        home: {
+            name: 'Real Madrid',
+            players: [
+                { name: 'Thibaut Courtois', jersey_number: 1, position: 'GK', is_starter: true },
+                { name: 'Dani Carvajal', jersey_number: 2, position: 'DF', is_starter: true },
+                { name: 'Éder Militão', jersey_number: 3, position: 'DF', is_starter: true },
+                { name: 'David Alaba', jersey_number: 4, position: 'DF', is_starter: true },
+                { name: 'Jude Bellingham', jersey_number: 5, position: 'MF', is_starter: true },
+                { name: 'Vinícius Jr', jersey_number: 7, position: 'FW', is_starter: true },
+                { name: 'Toni Kroos', jersey_number: 8, position: 'MF', is_starter: true },
+                { name: 'Luka Modrić', jersey_number: 10, position: 'MF', is_starter: true },
+                { name: 'Rodrygo', jersey_number: 11, position: 'FW', is_starter: true },
+                { name: 'Federico Valverde', jersey_number: 15, position: 'MF', is_starter: true },
+                { name: 'Ferland Mendy', jersey_number: 23, position: 'DF', is_starter: true }
+            ]
+        },
+        away: {
+            name: 'Barcelona',
+            players: [
+                { name: 'Marc ter Stegen', jersey_number: 1, position: 'GK', is_starter: true },
+                { name: 'Alejandro Balde', jersey_number: 3, position: 'DF', is_starter: true },
+                { name: 'Ronald Araújo', jersey_number: 4, position: 'DF', is_starter: true },
+                { name: 'Pedri', jersey_number: 8, position: 'MF', is_starter: true },
+                { name: 'Robert Lewandowski', jersey_number: 9, position: 'FW', is_starter: true },
+                { name: 'Raphinha', jersey_number: 11, position: 'FW', is_starter: true },
+                { name: 'Andreas Christensen', jersey_number: 15, position: 'DF', is_starter: true },
+                { name: 'Lamine Yamal', jersey_number: 19, position: 'FW', is_starter: true },
+                { name: 'Frenkie de Jong', jersey_number: 21, position: 'MF', is_starter: true },
+                { name: 'İlkay Gündoğan', jersey_number: 22, position: 'MF', is_starter: true },
+                { name: 'Jules Koundé', jersey_number: 23, position: 'DF', is_starter: true }
+            ]
+        }
+    },
+    basquetbol: {
+        home: {
+            name: 'Los Angeles Lakers',
+            players: [
+                { name: 'D\'Angelo Russell', jersey_number: 1, position: 'PG', is_starter: true },
+                { name: 'Anthony Davis', jersey_number: 3, position: 'C', is_starter: true },
+                { name: 'LeBron James', jersey_number: 23, position: 'SF', is_starter: true },
+                { name: 'Austin Reaves', jersey_number: 15, position: 'SG', is_starter: true },
+                { name: 'Rui Hachimura', jersey_number: 28, position: 'PF', is_starter: true }
+            ]
+        },
+        away: {
+            name: 'Boston Celtics',
+            players: [
+                { name: 'Jrue Holiday', jersey_number: 4, position: 'PG', is_starter: true },
+                { name: 'Jaylen Brown', jersey_number: 7, position: 'SG', is_starter: true },
+                { name: 'Kristaps Porziņģis', jersey_number: 8, position: 'C', is_starter: true },
+                { name: 'Derrick White', jersey_number: 9, position: 'SG', is_starter: true },
+                { name: 'Jayson Tatum', jersey_number: 0, position: 'PF', is_starter: true }
+            ]
+        }
+    },
+    beisbol: {
+        home: {
+            name: 'New York Yankees',
+            players: [
+                { name: 'Juan Soto', jersey_number: 22, position: 'OF', is_starter: true },
+                { name: 'Aaron Judge', jersey_number: 99, position: 'OF', is_starter: true },
+                { name: 'Anthony Rizzo', jersey_number: 48, position: '1B', is_starter: true },
+                { name: 'Gleyber Torres', jersey_number: 25, position: '2B', is_starter: true },
+                { name: 'Giancarlo Stanton', jersey_number: 27, position: 'DH', is_starter: true },
+                { name: 'Alex Verdugo', jersey_number: 24, position: 'OF', is_starter: true },
+                { name: 'Anthony Volpe', jersey_number: 11, position: 'SS', is_starter: true },
+                { name: 'Austin Wells', jersey_number: 28, position: 'C', is_starter: true },
+                { name: 'Oswaldo Cabrera', jersey_number: 95, position: '3B', is_starter: true }
+            ]
+        },
+        away: {
+            name: 'Los Angeles Dodgers',
+            players: [
+                { name: 'Mookie Betts', jersey_number: 50, position: 'SS', is_starter: true },
+                { name: 'Freddie Freeman', jersey_number: 5, position: '1B', is_starter: true },
+                { name: 'Shohei Ohtani', jersey_number: 17, position: 'DH', is_starter: true },
+                { name: 'Will Smith', jersey_number: 15, position: 'C', is_starter: true },
+                { name: 'Max Muncy', jersey_number: 13, position: '3B', is_starter: true },
+                { name: 'Teoscar Hernández', jersey_number: 37, position: 'OF', is_starter: true },
+                { name: 'Jason Heyward', jersey_number: 7, position: 'OF', is_starter: true },
+                { name: 'Gavin Lux', jersey_number: 9, position: '2B', is_starter: true },
+                { name: 'James Outman', jersey_number: 33, position: 'OF', is_starter: true }
+            ]
+        }
+    }
+};
+
+export function getStandardTeams(sport) {
+    return STANDARD_TEAMS[sport] || null;
+}
+
 export function getSportLabel(sport) {
     return SPORT_LABELS[sport] || sport;
 }
 
 export function getPlayerPositions(sport) {
-    return PLAYER_POSITIONS[sport] || PLAYER_POSITIONS.otro;
+    return PLAYER_POSITIONS[sport] || [];
 }
 
 export function getFoulTypes(sport) {
-    return FOUL_TYPES[sport] || FOUL_TYPES.otro;
+    return FOUL_TYPES[sport] || [];
 }
 
 export function getFoulTypeLabel(sport, value) {
@@ -191,7 +265,7 @@ function fieldVisible(field, form, player) {
 }
 
 export function getStatFields(sport, form = {}, player = null) {
-    const all = STAT_FIELDS_BASE[sport] || STAT_FIELDS_BASE.otro;
+    const all = STAT_FIELDS_BASE[sport] || [];
     return all.filter(f => fieldVisible(f, form, player));
 }
 
@@ -217,10 +291,9 @@ export function getStatsPayloadKey(sport) {
     const map = {
         futbol: 'soccer_stats',
         beisbol: 'baseball_stats',
-        basquetbol: 'basketball_stats',
-        otro: 'generic_stats'
+        basquetbol: 'basketball_stats'
     };
-    return map[sport] || 'generic_stats';
+    return map[sport] || 'soccer_stats';
 }
 
 export function getDefaultStats(sport, form = {}) {

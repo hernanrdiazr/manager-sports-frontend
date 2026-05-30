@@ -42,8 +42,8 @@ export function validatePlayerForm(form, existingPlayers, teamOptions, positions
 
 export function validateScoreForm(sport, form) {
     const errors = {};
-    const limits = { futbol: 50, beisbol: 50, basquetbol: 200, otro: 999 };
-    const max = limits[sport] || 999;
+    const limits = { futbol: 50, beisbol: 50, basquetbol: 200 };
+    const max = limits[sport] || 200;
 
     ['home_score', 'away_score'].forEach(key => {
         const val = form[key];

@@ -15,7 +15,7 @@ const store = {
             total_tickets: 5000,
             available_tickets: 1200,
             ticket_price: 350,
-            status: 'activo',
+            status: 'próximo',
             estado_partido: 'Por comenzar'
         },
         {
@@ -30,7 +30,7 @@ const store = {
             total_tickets: 8000,
             available_tickets: 2100,
             ticket_price: 180,
-            status: 'activo',
+            status: 'próximo',
             estado_partido: 'Por comenzar'
         },
         {
@@ -45,7 +45,7 @@ const store = {
             total_tickets: 12000,
             available_tickets: 4500,
             ticket_price: 220,
-            status: 'activo',
+            status: 'próximo',
             estado_partido: 'En curso'
         }
     ],

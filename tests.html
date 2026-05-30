@@ -445,11 +445,7 @@ const eventDetailsComputed = {
             { id: 'roster', label: 'Roster / Equipos' }
         ];
         if (this.isFinalized) {
-            if (this.event?.sport === 'otro') {
-                tabs.push({ id: 'rankings', label: 'Clasificación / Rankings' });
-            } else {
-                tabs.push({ id: 'stats', label: 'Estadísticas / Marcador' });
-            }
+            tabs.push({ id: 'stats', label: 'Estadísticas / Marcador' });
         }
         return tabs;
     }
@@ -468,25 +464,24 @@ function callComputed(name, ctx) {
 }
 
 // ── from eventSportConfig.js ──
-const PAYLOAD_MAP = { futbol:'soccer_stats', beisbol:'baseball_stats', basquetbol:'basketball_stats', otro:'generic_stats' };
-function getStatsPayloadKey(sport) { return PAYLOAD_MAP[sport] || 'generic_stats'; }
+const PAYLOAD_MAP = { futbol:'soccer_stats', beisbol:'baseball_stats', basquetbol:'basketball_stats' };
+function getStatsPayloadKey(sport) { return PAYLOAD_MAP[sport] || 'soccer_stats'; }
 
-const SPORT_LABELS = { futbol:'Fútbol', beisbol:'Béisbol', basquetbol:'Básquetbol', otro:'Otro' };
+const SPORT_LABELS = { futbol:'Fútbol', beisbol:'Béisbol', basquetbol:'Básquetbol' };
 function getSportLabel(sport) { return SPORT_LABELS[sport] || sport; }
 
 const DEFAULT_STATS_DEF = {
     futbol:     { goals:0, shots:0, yellow_cards:0, red_cards:0, assists:0, passes:0, fouls_committed:0 },
     basquetbol: { points:0, assists:0, rebounds:0, fg_made:0, fg_attempted:0, minutes_played:0 },
-    beisbol:    { role:'batter', at_bats:0, hits:0, home_runs:0, rbi:0 },
-    otro:       { score:0, rank:0, penalties:0 }
+    beisbol:    { role:'batter', at_bats:0, hits:0, home_runs:0, rbi:0 }
 };
-function getDefaultStats(sport) { return { ...(DEFAULT_STATS_DEF[sport] || DEFAULT_STATS_DEF.otro) }; }
+function getDefaultStats(sport) { return { ...(DEFAULT_STATS_DEF[sport] || DEFAULT_STATS_DEF.futbol) }; }
 
 // ── from eventValidators.js ──
 function validateScoreForm(sport, form) {
     const errors = {};
-    const limits = { futbol:50, beisbol:50, basquetbol:200, otro:999 };
-    const max = limits[sport] || 999;
+    const limits = { futbol:50, beisbol:50, basquetbol:200 };
+    const max = limits[sport] || 200;
     ['home_score','away_score'].forEach(key => {
         const val = form[key];
         if (!Number.isInteger(val) || val < 0) errors[key] = 'Debe ser un entero ≥ 0';
@@ -683,12 +678,7 @@ describe('Estados de Eventos', () => {
             assert.includes(tabs, 'stats');
         });
 
-        it('availableTabs incluye "rankings" para deporte "otro" finalizado', () => {
-            const ctx = { event: { status: 'finalizado', sport: 'otro', event_date: pastDate } };
-            const tabs = callComputed('availableTabs', ctx).map(t => t.id);
-            assert.includes(tabs, 'rankings');
-            assert.notIncludes(tabs, 'stats');
-        });
+
     });
 
 }, '🗓️');
@@ -699,8 +689,7 @@ describe('Mapeo y Registro de Estadísticas', () => {
         it('fútbol debe mapear a "soccer_stats"',     () => assert.equal(getStatsPayloadKey('futbol'), 'soccer_stats'));
         it('basquetbol debe mapear a "basketball_stats"', () => assert.equal(getStatsPayloadKey('basquetbol'), 'basketball_stats'));
         it('beisbol debe mapear a "baseball_stats"',  () => assert.equal(getStatsPayloadKey('beisbol'), 'baseball_stats'));
-        it('"otro" debe mapear a "generic_stats"',    () => assert.equal(getStatsPayloadKey('otro'), 'generic_stats'));
-        it('deporte desconocido debe caer en "generic_stats"', () => assert.equal(getStatsPayloadKey('natacion'), 'generic_stats'));
+        it('deporte desconocido debe caer en "soccer_stats"', () => assert.equal(getStatsPayloadKey('natacion'), 'soccer_stats'));
     });
 
     context('Etiquetas de Deporte', () => {

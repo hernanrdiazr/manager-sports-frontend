@@ -351,38 +351,6 @@ class ScoreRepository {
                     fullStats.jugadores_visitante.push(pData);
                 }
             }
-        } else {
-            // "otro" deporte / Rankings genéricos
-            const players = await selectAll(`
-                SELECT p.name, p.jersey_number, p.position,
-                       g.score, g.score_unit, g.rank, g.penalties, g.extra_data
-                FROM players p
-                JOIN generic_player_stats g ON p.id = g.player_id
-                WHERE g.event_id = ?
-                ORDER BY g.rank ASC, g.score DESC;
-            `, [eventId]);
-
-            const rankings = [];
-            for (const p of players) {
-                let parsedExtraData = {};
-                try {
-                    parsedExtraData = p.extra_data ? JSON.parse(p.extra_data) : {};
-                } catch (e) {
-                    parsedExtraData = {};
-                }
-
-                rankings.push({
-                    nombre: p.name,
-                    numero: p.jersey_number,
-                    posicion: p.position,
-                    puntaje: p.score,
-                    unidad: p.score_unit,
-                    puesto: p.rank,
-                    penalizaciones: p.penalties,
-                    extra_data: parsedExtraData
-                });
-            }
-            fullStats.rankings = rankings;
         }
 
         return fullStats;

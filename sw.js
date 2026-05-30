@@ -1,4 +1,4 @@
-// sw.js - Service Worker para inyectar cabeceras COOP y COEP requeridas por SQLite WASM OPFS
+// sw.js v2 - Service Worker para inyectar cabeceras COOP/COEP y forzar no-cache
 self.addEventListener('install', () => {
   self.skipWaiting();
 });
@@ -18,7 +18,7 @@ self.addEventListener('fetch', (event) => {
 
   // Interceptar solo peticiones del mismo origen para inyectar cabeceras de aislamiento (COOP/COEP)
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: 'no-store' })
       .then((response) => {
         // No modificar respuestas opacas
         if (response.status === 0) {
@@ -28,6 +28,7 @@ self.addEventListener('fetch', (event) => {
         const newHeaders = new Headers(response.headers);
         newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
         newHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
+        newHeaders.set('Cache-Control', 'no-cache, no-store, must-revalidate');
 
         // Asegurar que archivos WASM y JS locales tengan el tipo MIME correcto
         const urlPath = requestUrl.pathname;

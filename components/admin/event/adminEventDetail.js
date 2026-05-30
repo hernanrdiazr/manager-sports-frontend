@@ -41,13 +41,13 @@ export default {
     props: {
         event: { type: Object, required: true }
     },
-    emits: ['close', 'updated'],
+    emits: ['close', 'updated', 'cancel-event'],
 
     template: `
         <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" @click.self="$emit('close')">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-5xl h-[min(90vh,820px)] flex flex-col overflow-hidden">
 
-                <!-- Cabecera fija -->
+                <!-- Cabecera fija con cronómetro deportivo -->
                 <header class="flex-shrink-0 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-slate-50 to-white">
                     <div class="flex items-start justify-between gap-4">
                         <div class="min-w-0 flex-1">
@@ -63,16 +63,70 @@ export default {
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
-                    <div v-if="teams.length" class="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 p-3 bg-white rounded-xl border border-gray-100">
-                        <div class="text-center min-w-0">
-                            <p class="text-[10px] text-slate-400 uppercase truncate">{{ homeTeamName }}</p>
-                            <p class="text-xl font-bold text-gray-900 tabular-nums">{{ scoreForm.home_score }}</p>
+
+                    <!-- Cronómetro: Próximo -->
+                    <div v-if="event.status === 'próximo'" class="mt-4 bg-gradient-to-br from-blue-50 to-indigo-50/50 border border-blue-100 rounded-2xl p-5 text-center">
+                        <p class="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Comienza en</p>
+                        <p class="text-4xl sm:text-5xl font-black text-blue-900 tabular-nums leading-none">{{ countdownDisplay }}</p>
+                        <p class="text-xs text-blue-400 mt-2">{{ event.start_time ? formatTimeUntil(event.start_time) : '' }}</p>
+                        <div class="flex justify-center gap-3 mt-4">
+                            <button @click="startMatch" class="bg-emerald-500 hover:bg-emerald-600 text-white px-10 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all hover:shadow-lg hover:shadow-emerald-200 active:scale-95">
+                                ▶ Iniciar partido
+                            </button>
+                            <button @click="cancelFromDetail" class="bg-white hover:bg-red-50 text-red-500 border border-red-200 px-5 py-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all hover:border-red-300 active:scale-95">
+                                Cancelar
+                            </button>
                         </div>
-                        <span class="text-slate-300 text-lg px-1">—</span>
-                        <div class="text-center min-w-0">
-                            <p class="text-[10px] text-slate-400 uppercase truncate">{{ awayTeamName }}</p>
-                            <p class="text-xl font-bold text-gray-900 tabular-nums">{{ scoreForm.away_score }}</p>
+                    </div>
+
+                    <!-- Cronómetro: En vivo -->
+                    <div v-else-if="event.status === 'en curso'" class="mt-4 bg-gradient-to-br from-emerald-50 to-green-50/50 border border-emerald-200 rounded-2xl p-5 text-center">
+                        <div class="flex items-center justify-center gap-3 mb-3">
+                            <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span class="text-xs font-black text-emerald-600 uppercase tracking-widest">EN VIVO</span>
                         </div>
+                        <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+                            <div class="text-right min-w-0">
+                                <p class="text-[10px] text-slate-500 uppercase font-bold truncate">{{ homeTeamName }}</p>
+                                <p class="text-3xl sm:text-4xl font-black text-gray-900 tabular-nums">{{ scoreForm.home_score }}</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-4xl sm:text-5xl font-black text-emerald-700 tabular-nums leading-none min-w-[7rem]">{{ gameTimeDisplay }}</p>
+                                <p class="text-[10px] text-emerald-500 font-black uppercase mt-1 tracking-wider">Tiempo transcurrido</p>
+                            </div>
+                            <div class="text-left min-w-0">
+                                <p class="text-[10px] text-slate-500 uppercase font-bold truncate">{{ awayTeamName }}</p>
+                                <p class="text-3xl sm:text-4xl font-black text-gray-900 tabular-nums">{{ scoreForm.away_score }}</p>
+                            </div>
+                        </div>
+                        <div class="flex justify-center gap-3 mt-4">
+                            <button @click="endMatch" class="bg-slate-600 hover:bg-slate-700 text-white px-8 py-3 rounded-xl text-sm font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                Finalizar partido
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Finalizado -->
+                    <div v-else-if="event.status === 'finalizado'" class="mt-4 bg-gradient-to-br from-slate-50 to-gray-50/50 border border-slate-200 rounded-2xl p-5 text-center">
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Partido finalizado</p>
+                        <div class="flex items-center justify-center gap-6">
+                            <div class="text-right">
+                                <p class="text-[10px] text-slate-400 uppercase font-bold">{{ homeTeamName }}</p>
+                                <p class="text-3xl font-black text-gray-900 tabular-nums">{{ scoreForm.home_score }}</p>
+                            </div>
+                            <span class="text-slate-300 text-2xl font-bold">—</span>
+                            <div class="text-left">
+                                <p class="text-[10px] text-slate-400 uppercase font-bold">{{ awayTeamName }}</p>
+                                <p class="text-3xl font-black text-gray-900 tabular-nums">{{ scoreForm.away_score }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cancelado -->
+                    <div v-else-if="event.status === 'cancelado'" class="mt-4 bg-gradient-to-br from-red-50 to-rose-50/50 border border-red-200 rounded-2xl p-5 text-center">
+                        <p class="text-xs font-black text-red-500 uppercase tracking-widest mb-2">Evento cancelado</p>
+                        <p class="text-sm text-red-400">{{ event.location }} · {{ formatDate(event.event_date) }}</p>
                     </div>
                 </header>
 
@@ -350,6 +404,8 @@ export default {
             foulErrors: {},
             newPlayer: { team_id: null, name: '', jersey_number: 1, position: '', is_starter: true },
             newFoul: { player_id: null, foul_type: '', description: '', minute: null },
+            currentTime: new Date(),
+            timerInterval: null,
             tabs: [
                 { id: 'puntuacion', label: 'Marcador', hint: 'Resultado' },
                 { id: 'jugadores', label: 'Plantilla', hint: 'Altas y estado' },
@@ -394,15 +450,132 @@ export default {
         },
         activeTabHint() {
             return this.tabs.find(t => t.id === this.activeTab)?.hint || '';
+        },
+        countdownDisplay() {
+            if (this.event.status !== 'próximo') return '';
+            const start = this.safeParseDate(this.event.start_time);
+            if (!start) return '';
+            const diff = start - this.currentTime;
+            if (diff <= 0) return '00:00';
+            const d = Math.floor(diff / 86400000);
+            const h = Math.floor((diff % 86400000) / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            const s = Math.floor((diff % 60000) / 1000);
+            if (d > 0) return `${d}d ${h}h ${m}m`;
+            if (h > 0) return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        },
+        gameTimeDisplay() {
+            if (this.event.status !== 'en curso') return '00:00';
+            const start = this.safeParseDate(this.event.start_time);
+            if (!start) return '00:00';
+            const elapsed = this.currentTime - start;
+            if (elapsed < 0) return '00:00';
+            const totalSec = Math.floor(elapsed / 1000);
+            const m = Math.floor(totalSec / 60);
+            const s = totalSec % 60;
+            if (m >= 60) {
+                const h = Math.floor(m / 60);
+                return `${h}:${String(m % 60).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            }
+            return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
         }
     },
 
     async created() {
         await this.loadAll();
         this.resetNewPlayerDefaults();
+        this.startTimer();
+    },
+
+    beforeUnmount() {
+        this.stopTimer();
     },
 
     methods: {
+        startTimer() {
+            this.currentTime = new Date();
+            this.timerInterval = setInterval(() => {
+                this.currentTime = new Date();
+            }, 1000);
+        },
+
+        stopTimer() {
+            if (this.timerInterval) {
+                clearInterval(this.timerInterval);
+                this.timerInterval = null;
+            }
+        },
+
+        formatTimeUntil(dateStr) {
+            if (!dateStr) return '';
+            const start = this.safeParseDate(dateStr);
+            if (!start) return '';
+            const diff = start - new Date();
+            if (diff <= 0) return 'Debe comenzar ahora';
+            const h = Math.floor(diff / 3600000);
+            const m = Math.floor((diff % 3600000) / 60000);
+            if (h > 0) return `(~${h}h ${m}m desde ahora)`;
+            return `(~${m}m desde ahora)`;
+        },
+
+        async startMatch() {
+            this.saving = true;
+            try {
+                if (this.isMock) {
+                    this.event.status = 'en curso';
+                    this.event.start_time = new Date().toISOString();
+                } else {
+                    await api.put(`/events/${this.event.id}/status`, { status: 'en curso' });
+                    this.event.status = 'en curso';
+                    // Reload to get the server-set start_time
+                    const updated = await api.get(`/events/${this.event.id}`);
+                    if (updated) this.event.start_time = updated.start_time;
+                }
+                this.showToast('Partido iniciado');
+                this.$emit('updated');
+            } catch (e) {
+                this.error = e.message;
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async endMatch() {
+            this.saving = true;
+            try {
+                if (this.isMock) {
+                    this.event.status = 'finalizado';
+                } else {
+                    await api.put(`/events/${this.event.id}/status`, { status: 'finalizado' });
+                    this.event.status = 'finalizado';
+                }
+                this.showToast('Partido finalizado');
+                this.$emit('updated');
+            } catch (e) {
+                this.error = e.message;
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async cancelFromDetail() {
+            this.$emit('close');
+            // Small delay to let modal close, then trigger cancel from parent
+            await new Promise(r => setTimeout(r, 100));
+            this.$emit('cancel-event', this.event.id);
+        },
+
+        safeParseDate(value) {
+            if (!value) return null;
+            const d = new Date(value);
+            if (!isNaN(d.getTime())) return d;
+            // Normalize "YYYY-MM-DD HH:MM:SS" (space) → ISO 8601
+            const normalized = String(value).replace(' ', 'T');
+            const d2 = new Date(normalized);
+            return isNaN(d2.getTime()) ? null : d2;
+        },
+
         inputClass(field, errors) {
             const base = 'w-full mt-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30';
             return errors[field] ? `${base} border-red-400 bg-red-50/30` : `${base} border-gray-200`;

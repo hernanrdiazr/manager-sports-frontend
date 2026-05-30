@@ -316,92 +316,7 @@ export default {
                             </div>
                         </div>
 
-                        <!-- ==================== TAB: RANKINGS / CLASIFICACIÓN (Deporte = "otro") ==================== -->
-                        <div v-if="activeTab === 'rankings'" class="space-y-6 animate-fade-in">
-                            <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm">
-                                <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Tabla de Clasificación y Rankings</h4>
-                                
-                                <div v-if="!rankings || rankings.length === 0" class="text-center py-12">
-                                    <i class="fa-solid fa-trophy text-yellow-400 text-4xl block mb-2"></i>
-                                    <h4 class="text-sm font-black text-slate-800 uppercase">Sin rankings cargados</h4>
-                                    <p class="text-slate-400 text-xs">Las posiciones finales aún están siendo validadas por los jueces.</p>
-                                </div>
-                                <div v-else class="overflow-x-auto">
-                                    <table class="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr class="bg-slate-50 border-b border-slate-100">
-                                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-20">Puesto</th>
-                                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Participante</th>
-                                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Resultado</th>
-                                                <th class="p-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Faltas / Pen.</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody class="divide-y divide-slate-100">
-                                            <tr 
-                                                v-for="r in rankings" 
-                                                :key="r.nombre"
-                                                class="hover:bg-slate-50/40 transition-colors"
-                                            >
-                                                <!-- Podio Badges -->
-                                                <td class="p-4 text-center">
-                                                    <span 
-                                                        v-if="r.puesto === 1"
-                                                        class="inline-flex items-center justify-center w-7 h-7 bg-amber-100 border border-amber-200 text-amber-800 rounded-full font-black text-xs shadow-sm"
-                                                        title="1er Lugar"
-                                                    >
-                                                        🥇
-                                                    </span>
-                                                    <span 
-                                                        v-else-if="r.puesto === 2"
-                                                        class="inline-flex items-center justify-center w-7 h-7 bg-slate-100 border border-slate-200 text-slate-700 rounded-full font-black text-xs"
-                                                        title="2do Lugar"
-                                                    >
-                                                        🥈
-                                                    </span>
-                                                    <span 
-                                                        v-else-if="r.puesto === 3"
-                                                        class="inline-flex items-center justify-center w-7 h-7 bg-orange-50 border border-orange-200 text-orange-800 rounded-full font-black text-xs"
-                                                        title="3er Lugar"
-                                                    >
-                                                        🥉
-                                                    </span>
-                                                    <span 
-                                                        v-else
-                                                        class="text-sm font-black text-slate-400"
-                                                    >
-                                                        {{ r.puesto }}
-                                                    </span>
-                                                </td>
-                                                <td class="p-4">
-                                                    <div class="flex items-center gap-2.5">
-                                                        <div class="w-8 h-8 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center font-bold text-xs">
-                                                            #{{ r.numero }}
-                                                        </div>
-                                                        <div>
-                                                            <div class="text-sm font-bold text-slate-800">{{ r.nombre }}</div>
-                                                            <div class="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{{ r.posicion }}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="p-4 text-right">
-                                                    <span class="text-sm font-black text-blue-600 bg-blue-50/50 border border-blue-100 px-3 py-1.5 rounded-xl font-mono">
-                                                        {{ r.puntaje }} <span class="text-[10px] text-slate-400 font-bold uppercase">{{ r.unidad || 'pts' }}</span>
-                                                    </span>
-                                                </td>
-                                                <td class="p-4 text-center">
-                                                    <span 
-                                                        :class="r.penalizaciones > 0 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-slate-100 text-slate-500 border-transparent'"
-                                                        class="text-xs font-bold px-2 py-0.5 rounded-md border"
-                                                    >
-                                                        {{ r.penalizaciones || 0 }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -417,11 +332,10 @@ export default {
             activeTab: 'info',
             map: null,
             statusClasses: {
-                'activo': 'bg-green-500/10 text-green-500 border-green-500/20',
-                'finalizado': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
-                'en curso': 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
                 'próximo': 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-                'pausado': 'bg-red-500/10 text-red-500 border-red-500/20'
+                'en curso': 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+                'finalizado': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+                'cancelado': 'bg-red-500/10 text-red-500 border-red-500/20'
             }
         };
     },
@@ -430,7 +344,7 @@ export default {
             return this.event?.status || 'Activo';
         },
         isFinalized() {
-            return this.eventStatus.toLowerCase() === 'finalizado' || this.eventStatus.toLowerCase() === 'finalizada';
+            return this.eventStatus.toLowerCase() === 'finalizado';
         },
         availableTabs() {
             const tabs = [
@@ -438,11 +352,7 @@ export default {
                 { id: 'roster', label: 'Roster / Equipos' }
             ];
             if (this.isFinalized) {
-                if (this.event?.sport === 'otro') {
-                    tabs.push({ id: 'rankings', label: 'Clasificación / Rankings' });
-                } else {
-                    tabs.push({ id: 'stats', label: 'Estadísticas / Marcador' });
-                }
+                tabs.push({ id: 'stats', label: 'Estadísticas / Marcador' });
             }
             return tabs;
         },
@@ -542,9 +452,6 @@ export default {
         },
         visitantePlayerStatsList() {
             return this.stats?.jugadores_visitante || [];
-        },
-        rankings() {
-            return this.stats?.rankings || [];
         }
     },
     watch: {

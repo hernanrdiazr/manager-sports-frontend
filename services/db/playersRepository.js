@@ -144,17 +144,6 @@ class PlayersRepository {
                 stats.three_made || stats.threesMade || 0, stats.three_attempted || stats.threesAtt || 0, stats.ft_made || stats.freeThrowsMade || 0, stats.ft_attempted || stats.freeThrowsAtt || 0,
                 playerId, eventId
             ]);
-        } else {
-            // "otro" deporte
-            const extraDataStr = typeof stats.extra_data === 'object' ? JSON.stringify(stats.extra_data) : (stats.extra_data || '{}');
-            await run(`
-                UPDATE generic_player_stats SET
-                    score = ?, score_unit = ?, rank = ?, penalties = ?, extra_data = ?
-                WHERE player_id = ? AND event_id = ?
-            `, [
-                stats.score || 0, stats.score_unit || stats.scoreUnit || 'points', stats.rank || 0, stats.penalties || 0, extraDataStr,
-                playerId, eventId
-            ]);
         }
     }
 
@@ -174,18 +163,8 @@ class PlayersRepository {
             sql = "SELECT * FROM baseball_player_stats WHERE player_id = ? AND event_id = ?;";
         } else if (sportLower === 'basquetbol') {
             sql = "SELECT * FROM basketball_player_stats WHERE player_id = ? AND event_id = ?;";
-        } else {
-            sql = "SELECT * FROM generic_player_stats WHERE player_id = ? AND event_id = ?;";
         }
         const stats = await selectOne(sql, [playerId, eventId]);
-        if (stats && (sportLower !== 'futbol' && sportLower !== 'beisbol' && sportLower !== 'basquetbol')) {
-            // Deserializar extra_data
-            try {
-                stats.extra_data = stats.extra_data ? JSON.parse(stats.extra_data) : {};
-            } catch (e) {
-                stats.extra_data = {};
-            }
-        }
         return stats;
     }
 }

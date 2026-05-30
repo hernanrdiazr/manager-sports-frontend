@@ -37,12 +37,12 @@ export async function seedDatabase(dbExec) {
     // Evento 1: Fútbol (Finalizado)
     // Evento 2: Béisbol (Activo/Próximo)
     // Evento 3: Básquetbol (Activo/Próximo)
-    // Evento 4: Tenis (Otros)
+
     await dbExec(`
         INSERT INTO events (id, name, sport, event_date, start_time, end_time, location, lat, lon, total_tickets, available_tickets, ticket_price, status) VALUES 
         (1, 'Gran Clásico de Fútbol: Real Madrid vs Barcelona', 'futbol', '${formatDate(pastDate)}', '${pastDate.toISOString().replace('T', ' ').substring(0, 19)}', '${pastDate.toISOString().replace('T', ' ').substring(0, 19)}', 'Estadio Metropolitano, Madrid', 40.4362, -3.5995, 100, 0, 45.00, 'finalizado'),
-        (2, 'Serie del Caribe: Yankees vs Red Sox', 'beisbol', '${formatDate(futureDate1)}', '${futureDate1.toISOString().replace('T', ' ').substring(0, 19)}', '${futureDate1.toISOString().replace('T', ' ').substring(0, 19)}', 'Yankee Stadium, New York', 40.8296, -73.9262, 120, 115, 60.00, 'activo'),
-        (3, 'Finales NBA: Lakers vs Celtics', 'basquetbol', '${formatDate(futureDate2)}', '${futureDate2.toISOString().replace('T', ' ').substring(0, 19)}', '${futureDate2.toISOString().replace('T', ' ').substring(0, 19)}', 'Crypto.com Arena, Los Angeles', 34.0430, -118.2673, 150, 140, 85.00, 'activo');
+        (2, 'Serie del Caribe: Yankees vs Red Sox', 'beisbol', '${formatDate(futureDate1)}', '${futureDate1.toISOString().replace('T', ' ').substring(0, 19)}', '${futureDate1.toISOString().replace('T', ' ').substring(0, 19)}', 'Yankee Stadium, New York', 40.8296, -73.9262, 120, 115, 60.00, 'próximo'),
+        (3, 'Finales NBA: Lakers vs Celtics', 'basquetbol', '${formatDate(futureDate2)}', '${futureDate2.toISOString().replace('T', ' ').substring(0, 19)}', '${futureDate2.toISOString().replace('T', ' ').substring(0, 19)}', 'Crypto.com Arena, Los Angeles', 34.0430, -118.2673, 150, 140, 85.00, 'próximo');
     `);
 
     // Insertar Equipos

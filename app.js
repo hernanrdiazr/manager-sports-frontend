@@ -5,6 +5,9 @@ import Admin from './views/admin/admin.js';
 import Login from './views/global/auth/login.js';
 import Register from './views/global/auth/register.js';
 import HomeView from './views/global/home.js';
+import EventsView from './views/global/events.js';
+import RankingsView from './views/global/rankings.js';
+import InfoPage from './views/global/infoPage.js';
 import AdminLogin from './views/global/auth/adminLogin.js';
 import User from './views/user/user.js';
 // EventDetails will be imported as subcomponents inside dashboards
@@ -32,6 +35,18 @@ const routes = [
                 path: '', 
                 component: HomeView,
                 meta: { guest: true }
+            },
+            { 
+                path: 'events', 
+                component: EventsView
+            },
+            { 
+                path: 'rankings', 
+                component: RankingsView
+            },
+            { 
+                path: 'info/:type', 
+                component: InfoPage
             }
         ]
     },

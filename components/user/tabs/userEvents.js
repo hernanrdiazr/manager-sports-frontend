@@ -112,15 +112,7 @@ const EventCard = {
         },
         isFinalized(event) {
             const status = (event.status || '').toLowerCase();
-            if (status === 'finalizado' || status === 'finalizada') return true;
-            
-            if (event.event_date) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const eventDate = new Date(event.event_date);
-                if (eventDate < today) return true;
-            }
-            return false;
+            return status === 'finalizado' || status === 'cancelado';
         }
     }
 };
@@ -171,7 +163,7 @@ export default {
                                 <option value="futbol">Fútbol</option>
                                 <option value="basquetbol">Básquetbol</option>
                                 <option value="beisbol">Béisbol</option>
-                                <option value="otro">Otros</option>
+
                             </select>
                         </div>
                     </div>
@@ -226,17 +218,13 @@ export default {
             today.setHours(0, 0, 0, 0);
 
             return this.events.filter(event => {
-                // Filtro de estado / fecha según pestaña seleccionada (viewMode)
                 const status = (event.status || '').toLowerCase();
-                const isFinal = status === 'finalizado' || status === 'finalizada';
-                const isPast = event.event_date && new Date(event.event_date) < today;
+                const isFinal = status === 'finalizado' || status === 'cancelado';
                 
                 if (this.viewMode === 'upcoming') {
-                    // Ocultar eventos finalizados o pasados
-                    if (isFinal || isPast) return false;
+                    if (isFinal) return false;
                 } else {
-                    // Mostrar solo finalizados o pasados
-                    if (!isFinal && !isPast) return false;
+                    if (!isFinal) return false;
                 }
 
                 // Filtro por búsqueda
@@ -247,9 +235,7 @@ export default {
                 
                 // Filtro por deporte
                 const eventSport = (event.sport || '').toLowerCase();
-                const matchesSport = this.sportFilter === 'todos' || 
-                                     (this.sportFilter === 'otro' && !['futbol', 'basquetbol', 'beisbol'].includes(eventSport)) ||
-                                     eventSport === this.sportFilter;
+                const matchesSport = this.sportFilter === 'todos' || eventSport === this.sportFilter;
                                      
                 return matchesSearch && matchesSport;
             });

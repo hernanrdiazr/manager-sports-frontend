@@ -54,7 +54,7 @@ export default {
       </section>
 
     <!-- How it works section -->
-    <section class="bg-white py-32">
+    <section id="como-funciona" class="bg-white py-32">
       <div class="max-w-6xl mx-auto px-6 sm:px-10">
         <div class="text-center mb-20">
           <span class="text-[#06B6D4] text-sm uppercase tracking-widest" style="font-weight: 700">
@@ -142,8 +142,6 @@ export default {
   `,
   data() {
     return {
-      menuOpen: false,
-      navItems: ["Eventos", "Cómo funciona", "Precios", "Contacto"],
       benefits: [
         { icon: 'shield', label: "Pago seguro" },
         { icon: 'logo-cyan', label: "Acceso instantáneo" },

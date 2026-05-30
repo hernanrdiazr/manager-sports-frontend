@@ -13,12 +13,15 @@ export default {
 
         <!-- Desktop Nav -->
         <nav class="hidden min-[1200px]:flex items-center gap-8">
-          <!-- Ahora navItems existe en data(), por lo que esto funcionará -->
-          <a v-for="item in navItems" :key="item" href="#" 
-             class="text-slate-400 hover:text-white transition-colors duration-200 text-sm" 
-             style="font-weight: 500">
-            {{ item }}
-          </a>
+          <button
+            v-for="item in navItems"
+            :key="item.label"
+            @click="item.action"
+            class="text-slate-400 hover:text-white transition-colors duration-200 text-sm cursor-pointer"
+            style="font-weight: 500; background: none; border: none;"
+          >
+            {{ item.label }}
+          </button>
         </nav>
 
         <div class="hidden min-[1200px]:flex items-center gap-3">
@@ -41,9 +44,15 @@ export default {
 
       <!-- Mobile Menu -->
       <div v-if="menuOpen" class="min-[1200px]:hidden border-t border-slate-800 px-6 py-6 flex flex-col gap-4">
-        <a v-for="item in navItems" :key="item" href="#" class="text-slate-400 hover:text-white transition-colors text-sm" style="font-weight: 500">
-          {{ item }}
-        </a>
+        <button
+          v-for="item in navItems"
+          :key="item.label"
+          @click="item.action(); menuOpen = false"
+          class="text-left text-slate-400 hover:text-white transition-colors text-sm cursor-pointer"
+          style="font-weight: 500; background: none; border: none;"
+        >
+          {{ item.label }}
+        </button>
         <div class="pt-2 flex flex-col gap-3">
           <router-link to="/login" class="text-slate-400 text-sm text-center" style="font-weight: 500" @click="menuOpen = false">
             Iniciar sesión
@@ -59,13 +68,32 @@ export default {
   `,
   data() {
     return {
-      menuOpen: false,
-      navItems: ["¿Quiénes somos?", "¿Cómo funciona?", "Eventos", "Rankings y Estadísticas", "Contáctanos"]
+      menuOpen: false
     };
+  },
+  computed: {
+    navItems() {
+      return [
+        { label: '¿Cómo funciona?', action: () => this.scrollToHowItWorks() },
+        { label: 'Eventos', action: () => this.$router.push('/events') },
+        { label: 'Rankings y Estadísticas', action: () => this.$router.push('/rankings') }
+      ];
+    }
   },
   methods: {
     toggleMenu() {
       this.menuOpen = !this.menuOpen;
+    },
+    scrollToHowItWorks() {
+      if (this.$route.path !== '/') {
+        this.$router.push('/').then(() => {
+          this.$nextTick(() => {
+            document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' });
+          });
+        });
+      } else {
+        document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   }
 };
