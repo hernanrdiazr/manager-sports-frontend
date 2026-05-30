@@ -39,6 +39,7 @@ self.addEventListener('fetch', (event) => {
         if (event.request.url.includes('unpkg.com') || 
             event.request.url.includes('cdn.jsdelivr.net') || 
             event.request.url.includes('fonts.googleapis.com') ||
+            event.request.url.includes('tailwindcss.com') ||
             event.request.url.includes('cartocdn.com') ||
             event.request.url.includes('openstreetmap.org')) {
           newHeaders.set('Cross-Origin-Resource-Policy', 'cross-origin');
