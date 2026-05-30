@@ -35,10 +35,10 @@ export default {
                         class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:border-blue-400 cursor-pointer transition-colors"
                     >
                         <option value="">Todos los deportes</option>
-                        <option value="futbol">⚽ Fútbol</option>
-                        <option value="beisbol">⚾ Béisbol</option>
-                        <option value="basquetbol">🏀 Básquetbol</option>
-                        <option value="otro">🏆 Otro</option>
+                        <option value="futbol">Fútbol</option>
+                        <option value="beisbol">Béisbol</option>
+                        <option value="basquetbol">Básquetbol</option>
+                        <option value="otro">Otro</option>
                     </select>
 
                     <!-- Buscador -->
@@ -97,8 +97,7 @@ export default {
                 >
                     <div class="p-5 flex flex-col sm:flex-row sm:items-center gap-4">
                         <!-- Sport icon badge -->
-                        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-xl shrink-0 bg-slate-50 border border-slate-100">
-                            {{ sportEmoji(event.sport) }}
+                        <div class="w-11 h-11 rounded-xl flex items-center justify-center text-lg shrink-0 bg-slate-50 border border-slate-100" v-html="sportIconHTML(event.sport)">
                         </div>
 
                         <!-- Main info -->
@@ -201,8 +200,9 @@ export default {
 
             <!-- Estado vacío -->
             <div v-else-if="!loading" class="bg-white rounded-3xl border border-dashed border-slate-200 p-16 text-center">
-                <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
-                    {{ searchQuery || filterSport ? '🔍' : '📅' }}
+                <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-xl text-slate-400">
+                    <i v-if="searchQuery || filterSport" class="fa-solid fa-magnifying-glass"></i>
+                    <i v-else class="fa-solid fa-calendar-days"></i>
                 </div>
                 <h3 class="text-sm font-black text-slate-800 uppercase italic mb-1">
                     {{ searchQuery || filterSport ? 'Sin resultados' : 'Sin eventos registrados' }}
@@ -301,9 +301,13 @@ export default {
             return map[status?.toLowerCase()] || 'bg-slate-100 text-slate-500 border-slate-200';
         },
 
-        sportEmoji(sport) {
-            const map = { futbol: '⚽', beisbol: '⚾', basquetbol: '🏀' };
-            return map[sport] || '🏆';
+        sportIconHTML(sport) {
+            const map = {
+                futbol: '<i class="fa-solid fa-futbol text-slate-700"></i>',
+                beisbol: '<i class="fa-solid fa-baseball text-amber-900"></i>',
+                basquetbol: '<i class="fa-solid fa-basketball text-orange-500"></i>'
+            };
+            return map[sport] || '<i class="fa-solid fa-trophy text-yellow-500"></i>';
         },
 
         async toggleStatus(event) {

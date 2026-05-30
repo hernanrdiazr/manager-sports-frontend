@@ -15,7 +15,7 @@ export default {
                         @click="loadTickets" 
                         class="flex items-center gap-2 bg-white text-slate-700 hover:text-slate-900 border border-slate-200 px-5 py-2.5 rounded-full text-xs font-black uppercase tracking-widest shadow-sm hover:shadow transition-all"
                     >
-                        🔄 Actualizar
+                        <i class="fa-solid fa-arrows-rotate"></i> Actualizar
                     </button>
                 </div>
 
@@ -26,7 +26,7 @@ export default {
 
                 <!-- Empty State -->
                 <div v-else-if="tickets.length === 0" class="text-center py-20 bg-white rounded-[3rem] border-4 border-dashed border-slate-100 animate-fade-in">
-                    <span class="text-6xl mb-6 block animate-bounce">🎟️</span>
+                    <i class="fa-solid fa-ticket text-6xl mb-6 block text-slate-300 animate-bounce"></i>
                     <h3 class="text-2xl font-black text-slate-900 mb-2 uppercase italic">No tienes entradas</h3>
                     <p class="text-slate-400 font-medium max-w-md mx-auto">Aún no has reservado entradas para ningún evento deportivo. Explora la cartelera y asegura tu lugar.</p>
                 </div>
@@ -59,8 +59,8 @@ export default {
 
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
                                     <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-                                            <span class="text-lg">📅</span>
+                                        <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 text-slate-400">
+                                            <i class="fa-solid fa-calendar-days text-lg"></i>
                                         </div>
                                         <div>
                                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Fecha Evento</p>
@@ -68,8 +68,8 @@ export default {
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-                                            <span class="text-lg">📍</span>
+                                        <div class="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 text-slate-400">
+                                            <i class="fa-solid fa-location-dot text-lg"></i>
                                         </div>
                                         <div>
                                             <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Ubicación</p>
@@ -125,19 +125,19 @@ export default {
                                     v-if="ticket.estado.toLowerCase() === 'aprobado' || ticket.estado.toLowerCase() === 'aprobada'"
                                     class="border-4 border-emerald-500/30 text-emerald-600 font-black text-xs uppercase tracking-widest px-4 py-2.5 rounded-2xl transform -rotate-3 inline-block animate-pulse"
                                 >
-                                    ✅ VÁLIDO / COMPRADO
+                                    <i class="fa-solid fa-circle-check mr-1"></i> VÁLIDO / COMPRADO
                                 </div>
                                 <div 
                                     v-else-if="ticket.estado.toLowerCase() === 'cancelada'"
                                     class="border-4 border-red-500/30 text-red-600 font-black text-xs uppercase tracking-widest px-4 py-2.5 rounded-2xl transform rotate-3 inline-block bg-red-50"
                                 >
-                                    ❌ EVENTO CANCELADO
+                                    <i class="fa-solid fa-circle-xmark mr-1"></i> EVENTO CANCELADO
                                 </div>
                                 <div 
                                     v-else
                                     class="border-4 border-amber-500/30 text-amber-600 font-black text-xs uppercase tracking-widest px-4 py-2.5 rounded-2xl transform rotate-3 inline-block"
                                 >
-                                    ⏳ PAGO PENDIENTE
+                                    <i class="fa-solid fa-clock mr-1"></i> PAGO PENDIENTE
                                 </div>
 
                                 <button 
@@ -145,7 +145,7 @@ export default {
                                     @click="printTicket(ticket)"
                                     class="w-full mt-3 bg-slate-900 hover:bg-slate-800 text-white py-2 px-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5 active:scale-95 shadow-sm hover:shadow cursor-pointer"
                                 >
-                                    🖨️ Imprimir Entrada
+                                    <i class="fa-solid fa-print"></i> Imprimir Entrada
                                 </button>
                             </div>
                         </div>

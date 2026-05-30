@@ -40,21 +40,21 @@ const EventCard = {
                         @click="$emit('view-details', sportEvent)"
                         class="flex-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 py-3.5 px-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 cursor-pointer text-center"
                     >
-                        📋 Detalles
+                        <i class="fa-solid fa-list-check mr-1"></i> Detalles
                     </button>
                     <button 
                         v-if="!isFinalized(sportEvent)"
                         @click="$emit('reserve', sportEvent)"
                         class="flex-[2] bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white py-3.5 px-3 rounded-2xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shadow-md shadow-blue-500/10 hover:shadow-lg hover:shadow-blue-500/20 cursor-pointer text-center"
                     >
-                        🎟️ Reservar
+                        <i class="fa-solid fa-ticket mr-1"></i> Reservar
                     </button>
                     <button 
                         v-else
                         @click="$emit('view-details', sportEvent)"
                         class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 px-4 rounded-2xl text-xs font-black uppercase tracking-widest transition-all duration-300 transform active:scale-95 shadow-md cursor-pointer text-center"
                     >
-                        📊 Ver Estadísticas y Resultados
+                        <i class="fa-solid fa-chart-simple mr-1"></i> Ver Estadísticas y Resultados
                     </button>
                 </div>
             </div>
@@ -142,21 +142,21 @@ export default {
                             class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                             :class="viewMode === 'upcoming' ? 'bg-[#0f172a] text-white shadow' : 'text-slate-500 hover:text-slate-800'"
                         >
-                            🔥 Próximos
+                            <i class="fa-solid fa-fire mr-1 text-orange-500"></i> Próximos
                         </button>
                         <button 
                             @click="viewMode = 'finalized'"
                             class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                             :class="viewMode === 'finalized' ? 'bg-[#0f172a] text-white shadow' : 'text-slate-500 hover:text-slate-800'"
                         >
-                            🏆 Resultados
+                            <i class="fa-solid fa-trophy mr-1 text-yellow-400"></i> Resultados
                         </button>
                     </div>
 
                     <div class="bg-white p-2 rounded-full shadow-md border border-gray-100 flex flex-col md:flex-row gap-4 items-center transition-all hover:shadow-lg">
                         <!-- Search -->
                         <div class="flex-grow flex items-center px-6 py-3 w-full">
-                            <span class="text-xl mr-4 opacity-50">🔍</span>
+                            <span class="mr-2 text-slate-400"><i class="fa-solid fa-magnifying-glass"></i></span>
                             <input v-model="searchQuery" type="text" placeholder="Buscar por nombre o ubicación..." class="w-full bg-transparent outline-none text-gray-700 font-bold placeholder-gray-300">
                         </div>
                         
@@ -184,7 +184,7 @@ export default {
                 
                 <!-- Empty State -->
                 <div v-else-if="filteredEvents.length === 0" class="text-center py-20 bg-white rounded-[3rem] border-4 border-dashed border-slate-100 animate-fade-in">
-                    <span class="text-5xl mb-6 block">😔</span>
+                    <i class="fa-regular fa-face-frown text-5xl mb-6 block text-slate-300"></i>
                     <h3 class="text-2xl font-black text-slate-900 mb-2 uppercase italic">No se encontraron eventos</h3>
                     <p class="text-slate-400 font-medium">Intenta ajustar tu búsqueda o no hay eventos disponibles en esta sección.</p>
                     <button @click="resetFilters" class="mt-8 bg-slate-900 text-white px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-colors">

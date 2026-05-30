@@ -18,7 +18,7 @@ export default {
             <!-- ESTADO INICIAL -->
             <div v-if="events.length === 0" class="bg-white rounded-[3rem] border-4 border-dashed border-slate-100 p-20 text-center">
                 <div class="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <span class="text-4xl">🏆</span>
+                    <i class="fa-solid fa-trophy text-yellow-400 text-4xl"></i>
                 </div>
                 <h3 class="text-xl font-black text-slate-900 uppercase italic">Listo para publicar</h3>
                 <p class="text-slate-400 mt-2 font-medium">Configura los detalles de tu próximo evento deportivo.</p>
@@ -76,11 +76,11 @@ export default {
                 <div class="p-10">
                     <!-- Mensaje de error -->
                     <div v-if="saveError" class="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm font-medium">
-                        ⚠️ {{ saveError }}
+                        <i class="fa-solid fa-triangle-exclamation mr-1 text-red-500"></i> {{ saveError }}
                     </div>
                     <!-- Mensaje de éxito -->
                     <div v-if="saveSuccess" class="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-2xl text-sm font-medium">
-                        ✅ {{ saveSuccess }}
+                        <i class="fa-solid fa-circle-check mr-1 text-emerald-500"></i> {{ saveSuccess }}
                     </div>
 
                     <div class="space-y-8">
@@ -93,9 +93,9 @@ export default {
                             <div class="col-span-1">
                                 <label class="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">Deporte</label>
                                 <select v-model="form.sport" class="w-full p-4 bg-slate-50 rounded-2xl border-2 border-transparent focus:border-blue-500 outline-none font-bold text-slate-700 cursor-pointer">
-                                    <option value="basquetbol">🏀 Básquetbol</option>
-                                    <option value="futbol">⚽ Fútbol</option>
-                                    <option value="beisbol">⚾ Béisbol</option>
+                                    <option value="basquetbol">Básquetbol</option>
+                                    <option value="futbol">Fútbol</option>
+                                    <option value="beisbol">Béisbol</option>
                                     <option value="otro">Otro</option>
                                 </select>
                             </div>
@@ -152,10 +152,10 @@ export default {
                                             <!-- Selector de Modo: Nuevo vs Existente -->
                                             <div v-if="form.isTeam" class="flex items-center bg-slate-100 rounded-full p-1 self-start">
                                                 <button type="button" @click="toggleTeamMode(team, false, tIndex)" :class="!team.useExisting ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'" class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all">
-                                                    ✍️ Nuevo
+                                                    <i class="fa-solid fa-pen-to-square mr-1"></i> Nuevo
                                                 </button>
                                                 <button type="button" @click="toggleTeamMode(team, true, tIndex)" :class="team.useExisting ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400'" class="px-4 py-1.5 rounded-full text-[9px] font-black uppercase transition-all" :disabled="existingTeams.length === 0" :title="existingTeams.length === 0 ? 'No hay equipos registrados de este deporte' : ''">
-                                                    🔍 Registrado
+                                                    <i class="fa-solid fa-magnifying-glass mr-1"></i> Registrado
                                                 </button>
                                             </div>
                                         </div>
@@ -216,15 +216,15 @@ export default {
                         <div class="p-8 bg-blue-50/50 rounded-[3rem] border-2 border-blue-100 space-y-5">
                             <p class="text-[10px] font-black text-blue-600 uppercase text-center tracking-[0.25em]">Configuración de Entradas</p>
                             <div class="grid grid-cols-2 gap-6">
-                                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-blue-100/50">
-                                    <p class="text-[10px] font-black text-slate-900 uppercase mb-4 flex items-center gap-2 italic">🎟️ Precio por Ticket ($)</p>
-                                    <input v-model="form.ticketPrice" type="number" min="0" step="0.01" class="w-full p-2 bg-slate-50 rounded-lg font-bold text-sm outline-none">
-                                </div>
-                                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-blue-100/50">
-                                    <p class="text-[10px] font-black text-slate-900 uppercase mb-4 flex items-center gap-2 italic">🎫 Total de Cupos</p>
-                                    <input v-model="form.totalTickets" type="number" min="1" class="w-full p-2 bg-slate-50 rounded-lg font-bold text-sm outline-none">
-                                </div>
-                            </div>
+                                                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-blue-100/50">
+                                                    <p class="text-[10px] font-black text-slate-900 uppercase mb-4 flex items-center gap-2 italic"><i class="fa-solid fa-tag text-[#06B6D4]"></i> Precio por Ticket ($)</p>
+                                                    <input v-model="form.ticketPrice" type="number" min="0" step="0.01" class="w-full p-2 bg-slate-50 rounded-lg font-bold text-sm outline-none">
+                                                </div>
+                                                <div class="bg-white p-5 rounded-[2rem] shadow-sm border border-blue-100/50">
+                                                    <p class="text-[10px] font-black text-slate-900 uppercase mb-4 flex items-center gap-2 italic"><i class="fa-solid fa-ticket text-blue-500"></i> Total de Cupos</p>
+                                                    <input v-model="form.totalTickets" type="number" min="1" class="w-full p-2 bg-slate-50 rounded-lg font-bold text-sm outline-none">
+                                                </div>
+                                            </div>
                         </div>
 
                         <!-- Ubicación -->

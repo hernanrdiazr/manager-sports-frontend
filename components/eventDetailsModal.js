@@ -56,9 +56,9 @@ export default {
                         {{ event?.name || 'Detalles del Evento' }}
                     </h3>
                     <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mt-2 flex items-center gap-2">
-                        <span>📍 {{ event?.location }}</span>
+                        <span><i class="fa-solid fa-location-dot text-red-500 mr-0.5"></i> {{ event?.location }}</span>
                         <span class="text-white/20">•</span>
-                        <span>📅 {{ formatDate(event?.event_date) }}</span>
+                        <span><i class="fa-solid fa-calendar-days text-slate-400 mr-0.5"></i> {{ formatDate(event?.event_date) }}</span>
                     </p>
                 </div>
 
@@ -87,7 +87,7 @@ export default {
 
                     <!-- ERROR State -->
                     <div v-else-if="error" class="text-center py-12">
-                        <span class="text-4xl block mb-3">⚠️</span>
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-500 text-4xl block mb-3"></i>
                         <h4 class="text-lg font-black text-slate-800 uppercase mb-2">Error de conexión</h4>
                         <p class="text-slate-500 text-sm max-w-md mx-auto">{{ error }}</p>
                     </div>
@@ -322,7 +322,7 @@ export default {
                                 <h4 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Tabla de Clasificación y Rankings</h4>
                                 
                                 <div v-if="!rankings || rankings.length === 0" class="text-center py-12">
-                                    <span class="text-4xl block mb-2">🏆</span>
+                                    <i class="fa-solid fa-trophy text-yellow-400 text-4xl block mb-2"></i>
                                     <h4 class="text-sm font-black text-slate-800 uppercase">Sin rankings cargados</h4>
                                     <p class="text-slate-400 text-xs">Las posiciones finales aún están siendo validadas por los jueces.</p>
                                 </div>

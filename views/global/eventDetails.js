@@ -16,7 +16,7 @@ export default {
                     @click="goBack" 
                     class="flex items-center gap-2 text-slate-600 hover:text-slate-900 border border-slate-200 bg-white px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
-                    ⬅️ Volver
+                    <i class="fa-solid fa-arrow-left"></i> Volver
                 </button>
             </div>
 
@@ -43,9 +43,9 @@ export default {
                             {{ event?.name }}
                         </h2>
                         <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mt-2 flex items-center gap-2">
-                            <span>📍 {{ event?.location }}</span>
+                            <span><i class="fa-solid fa-location-dot text-red-500 mr-0.5"></i> {{ event?.location }}</span>
                             <span class="text-slate-600">•</span>
-                            <span>📅 {{ formatDate(event?.event_date) }}</span>
+                            <span><i class="fa-solid fa-calendar-days text-slate-400 mr-0.5"></i> {{ formatDate(event?.event_date) }}</span>
                         </p>
                     </div>
 
@@ -57,7 +57,7 @@ export default {
                             @click="reserveTickets"
                             class="w-full bg-blue-600 hover:bg-blue-500 text-white py-2.5 px-4 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all duration-300 transform active:scale-95 shadow-lg shadow-blue-500/30 cursor-pointer"
                         >
-                            🎟️ Reservar Entradas
+                            <i class="fa-solid fa-ticket mr-1"></i> Reservar Entradas
                         </button>
                     </div>
                     <div v-else class="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col items-center min-w-[160px] w-full md:w-auto">
@@ -95,7 +95,7 @@ export default {
 
                     <!-- ERROR State -->
                     <div v-else-if="error" class="text-center py-16">
-                        <span class="text-4xl block mb-3">⚠️</span>
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-500 text-4xl block mb-3"></i>
                         <h4 class="text-lg font-black text-slate-800 uppercase mb-2">Error de conexión</h4>
                         <p class="text-slate-500 text-sm max-w-md mx-auto">{{ error }}</p>
                     </div>
@@ -336,7 +336,7 @@ export default {
                                 <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 pb-2 border-b border-slate-100">Tabla de Clasificación y Rankings</h4>
                                 
                                 <div v-if="!rankings || rankings.length === 0" class="text-center py-16">
-                                    <span class="text-4xl block mb-3">🏆</span>
+                                    <i class="fa-solid fa-trophy text-yellow-400 text-4xl block mb-3"></i>
                                     <h4 class="text-sm font-black text-slate-800 uppercase mb-1">Sin rankings cargados</h4>
                                     <p class="text-slate-400 text-xs">Las posiciones finales aún están siendo validadas por los jueces.</p>
                                 </div>
