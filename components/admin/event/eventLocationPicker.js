@@ -125,7 +125,8 @@ export default {
                 attributionControl: false
             });
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19
+                maxZoom: 19,
+                crossOrigin: true
             }).addTo(this.map);
             this.marker = L.marker([6.4238, -66.5897], { draggable: true }).addTo(this.map);
             this.marker.on('dragend', async () => {

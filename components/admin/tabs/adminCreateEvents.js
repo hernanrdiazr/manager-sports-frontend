@@ -319,7 +319,9 @@ export default {
         initMap() {
             if (this.map) this.map.remove();
             this.map = L.map('map-olympia', { zoomControl: false }).setView([this.form.lat, this.form.lon], 14);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                crossOrigin: true
+            }).addTo(this.map);
             this.marker = L.marker([this.form.lat, this.form.lon], { draggable: true }).addTo(this.map);
             this.marker.on('dragend', () => {
                 const pos = this.marker.getLatLng();

@@ -91,7 +91,8 @@ const EventCard = {
                 }).setView([lat, lon], 14);
                 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
+                    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                    crossOrigin: true
                 }).addTo(this.map);
                 
                 const customIcon = L.divIcon({

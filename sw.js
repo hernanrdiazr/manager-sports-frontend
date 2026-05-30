@@ -36,7 +36,11 @@ self.addEventListener('fetch', (event) => {
 
         // Para evitar problemas con recursos externos (como Leaflet o Tailwind CDN),
         // permitimos Cross-Origin Resource Sharing si no está ya configurado
-        if (event.request.url.includes('unpkg.com') || event.request.url.includes('cdn.jsdelivr.net') || event.request.url.includes('fonts.googleapis.com')) {
+        if (event.request.url.includes('unpkg.com') || 
+            event.request.url.includes('cdn.jsdelivr.net') || 
+            event.request.url.includes('fonts.googleapis.com') ||
+            event.request.url.includes('cartocdn.com') ||
+            event.request.url.includes('openstreetmap.org')) {
           newHeaders.set('Cross-Origin-Resource-Policy', 'cross-origin');
         }
 
