@@ -216,7 +216,7 @@ export default {
                 <html>
                 <head>
                     <title>Entrada #${ticket.id} - ${ticket.evento_nombre}</title>
-                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+                    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet" crossorigin>
                     <style>
                         body {
                             font-family: 'Inter', sans-serif;

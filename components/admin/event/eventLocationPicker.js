@@ -105,9 +105,11 @@ export default {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            link.crossOrigin = 'anonymous'; // Evitar bloqueo por políticas COEP
             document.head.appendChild(link);
             const script = document.createElement('script');
             script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            script.crossOrigin = 'anonymous'; // Evitar bloqueo por políticas COEP
             await new Promise((resolve, reject) => {
                 script.onload = resolve;
                 script.onerror = reject;
