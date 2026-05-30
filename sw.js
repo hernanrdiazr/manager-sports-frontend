@@ -8,12 +8,15 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Ignorar peticiones que no sean del mismo origen o esquemas externos si es necesario
-  if (event.request.cache === 'only-if-cached' && event.request.mode !== 'same-origin') {
+  const requestUrl = new URL(event.request.url);
+
+  // Si la petición es a un origen externo (como un CDN, Google Fonts, mapas, etc.),
+  // no la interceptamos. Dejamos que el navegador la maneje de forma nativa con sus cabeceras CORS.
+  if (requestUrl.origin !== self.location.origin) {
     return;
   }
 
-  // Interceptar la respuesta y añadir las cabeceras de seguridad
+  // Interceptar solo peticiones del mismo origen para inyectar cabeceras de aislamiento (COOP/COEP)
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -26,23 +29,12 @@ self.addEventListener('fetch', (event) => {
         newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
         newHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
 
-        // Asegurar que archivos WASM y JS/MJS tengan el tipo MIME correcto
-        const urlPath = event.request.url.split('?')[0].split('#')[0];
+        // Asegurar que archivos WASM y JS locales tengan el tipo MIME correcto
+        const urlPath = requestUrl.pathname;
         if (urlPath.endsWith('.wasm')) {
           newHeaders.set('content-type', 'application/wasm');
         } else if (urlPath.endsWith('.js') || urlPath.endsWith('.mjs')) {
           newHeaders.set('content-type', 'text/javascript');
-        }
-
-        // Para evitar problemas con recursos externos (como Leaflet o Tailwind CDN),
-        // permitimos Cross-Origin Resource Sharing si no está ya configurado
-        if (event.request.url.includes('unpkg.com') || 
-            event.request.url.includes('cdn.jsdelivr.net') || 
-            event.request.url.includes('fonts.googleapis.com') ||
-            event.request.url.includes('tailwindcss.com') ||
-            event.request.url.includes('cartocdn.com') ||
-            event.request.url.includes('openstreetmap.org')) {
-          newHeaders.set('Cross-Origin-Resource-Policy', 'cross-origin');
         }
 
         return new Response(response.body, {
