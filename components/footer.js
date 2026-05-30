@@ -24,8 +24,14 @@ export default {
             </a>
           </div>
 
-          <p class="text-slate-500 text-xs" style="font-weight: 500">
+          <p class="text-slate-500 text-xs flex items-center gap-1" style="font-weight: 500">
             © 2026 Olympia. Todos los derechos reservados.
+            <router-link
+              to="/login/admin"
+              class="text-slate-700 hover:text-slate-400 transition-colors ml-1"
+              title="Acceso administradores"
+              aria-label="Acceso administradores"
+            >·Admin Panel</router-link>
           </p>
         </div>
       </div>

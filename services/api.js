@@ -53,11 +53,17 @@ function dispatch(method, endpoint, body) {
         if (method === 'GET'   && seg[2] === 'teams')      return localApi.getEventTeams(eventId);
         if (method === 'GET'   && seg[2] === 'result')     return localApi.getEventResult(eventId);
         if (method === 'PATCH' && seg[2] === 'score')      return localApi.updateScore(eventId, body);
+        if (method === 'GET'   && seg[2] === 'team-stats') return localApi.getTeamStats(eventId, query.sport);
     }
 
     // /teams/:id/players
     if (seg[0] === 'teams' && seg[1] && !isNaN(seg[1]) && seg[2] === 'players') {
         return localApi.registerPlayer(+seg[1], query.sport, body);
+    }
+
+    // /teams/:id/team-stats
+    if (seg[0] === 'teams' && seg[1] && !isNaN(seg[1]) && seg[2] === 'team-stats' && method === 'PATCH') {
+        return localApi.updateTeamStats(+query.event_id, +seg[1], query.sport, body);
     }
 
     // /players/:id/...
@@ -83,6 +89,18 @@ function dispatch(method, endpoint, body) {
         if (method === 'GET'   && seg[2] === 'pending')  return localApi.getPendingReservations();
         if (method === 'PATCH' && seg[3] === 'approve')  return localApi.approveReservation(+seg[2]);
     }
+
+    // Dashboard stats
+    if (method === 'GET' && path === '/stats/byTeam')              return localApi.getStatsByTeam(query.start_date, query.end_date, query.sport);
+    if (method === 'GET' && path === '/stats/rankingTeams')         return localApi.getRankingTeams(query.sport);
+    if (method === 'GET' && path === '/admin/stats/indicatorsGestion') return localApi.getIndicatorsGestion(query.start_date, query.end_date, query.sport, query.event_id ? +query.event_id : null);
+    if (method === 'GET' && path === '/admin/stats/cantUsers')      return localApi.getCantUsers();
+    if (method === 'GET' && path === '/admin/stats/funnel')         return localApi.getFunnelData(query.start_date, query.end_date, query.sport, query.event_id ? +query.event_id : null);
+    if (method === 'GET' && path === '/admin/stats/eventsList')     return localApi.getEventsList(query.start_date, query.end_date, query.sport, +query.limit || 100, +query.offset || 0);
+    if (method === 'GET' && path === '/admin/stats/eventsHistory')  return localApi.getEventsHistory(query.start_date, query.end_date, query.sport, query.event_id ? +query.event_id : null);
+    if (method === 'GET' && path === '/admin/stats/ticketsByDay')    return localApi.getTicketsByDay(query.start_date, query.end_date, query.sport, query.event_id ? +query.event_id : null);
+
+
 
     throw new Error(`Ruta no implementada: ${method} ${endpoint}`);
 }

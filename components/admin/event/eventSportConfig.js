@@ -250,3 +250,42 @@ export function getHomeTeamName(teams) {
 export function getAwayTeamName(teams) {
     return teams.find(t => !t.is_home)?.name || 'Visitante';
 }
+
+// === Estadísticas de equipo por evento (tablas *_team_stats) ===
+export const TEAM_STAT_FIELDS = {
+    futbol: [
+        { key: 'possession',      label: 'Posesión (%)',       min: 0, max: 100 },
+        { key: 'total_shots',     label: 'Remates totales',    min: 0, max: 100 },
+        { key: 'shots_on_target', label: 'Remates al arco',    min: 0, max: 100 },
+        { key: 'corners',         label: 'Tiros de esquina',   min: 0, max: 50 },
+        { key: 'fouls',           label: 'Faltas',             min: 0, max: 100 },
+        { key: 'yellow_cards',    label: 'Tarjetas amarillas', min: 0, max: 20 },
+        { key: 'red_cards',       label: 'Tarjetas rojas',     min: 0, max: 10 },
+        { key: 'offsides',        label: 'Fueras de juego',    min: 0, max: 50 }
+    ],
+    beisbol: [
+        { key: 'runs',         label: 'Carreras',        min: 0, max: 100 },
+        { key: 'hits',         label: 'Hits',            min: 0, max: 100 },
+        { key: 'errors',       label: 'Errores',         min: 0, max: 50 },
+        { key: 'left_on_base', label: 'Dejados en base', min: 0, max: 50 }
+    ],
+    basquetbol: [
+        { key: 'points',    label: 'Puntos',           min: 0, max: 300 },
+        { key: 'rebounds',  label: 'Rebotes',          min: 0, max: 150 },
+        { key: 'assists',   label: 'Asistencias',      min: 0, max: 100 },
+        { key: 'turnovers', label: 'Pérdidas',         min: 0, max: 100 },
+        { key: 'fouls',     label: 'Faltas',           min: 0, max: 100 },
+        { key: 'fg_pct',    label: '% Tiros de campo',  min: 0, max: 100 },
+        { key: 'three_pct', label: '% Triples',         min: 0, max: 100 }
+    ]
+};
+
+export function getTeamStatFields(sport) {
+    return TEAM_STAT_FIELDS[sport] || [];
+}
+
+export function getDefaultTeamStats(sport) {
+    const stats = {};
+    getTeamStatFields(sport).forEach(f => { stats[f.key] = 0; });
+    return stats;
+}

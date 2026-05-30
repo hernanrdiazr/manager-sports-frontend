@@ -93,7 +93,7 @@ export default {
 
                     <!-- ✅ Componentes dinámicos por tab -->
                     <template v-else>
-                        <adminDashboard    v-if="activeTab === 'dashboard'"     :stats="stats" />
+                        <adminDashboard    v-if="activeTab === 'dashboard'" />
                         <adminTeams        v-if="activeTab === 'teams'" />
                         <adminCreateEvents v-if="activeTab === 'events-create'" />
                         <adminManageEvents v-if="activeTab === 'events-manage'" />
@@ -147,16 +147,7 @@ export default {
     
     methods: {
         async loadStats() {
-            try {   
-                const stats = {};
-                stats.indicatorsGestion = await api.get('/admin/stats/indicatorsGestion?start_date=2025-06-01&end_date=2025-06-30&sport=beisbol');
-                stats.eventsHistory = await api.get('/admin/stats/eventsHistory?start_date=2025-05-01&end_date=2025-05-30&sport=futbol');
-                this.stats = stats;
-            } catch (error) {
-                console.error('Error cargando stats:', error);
-            } finally {
-                this.loading = false;
-            }
+            this.loading = false;
         },
         
         handleLogout() {

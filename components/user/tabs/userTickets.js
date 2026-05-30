@@ -122,13 +122,13 @@ export default {
                             <!-- Ticket Stamp -->
                             <div class="w-full space-y-3">
                                 <div 
-                                    v-if="ticket.estado.toLowerCase() === 'aprobado' || ticket.estado.toLowerCase() === 'aprobada'"
+                                    v-if="ticket.estado.toLowerCase() === 'approved' || ticket.estado.toLowerCase() === 'aprobada'"
                                     class="border-4 border-emerald-500/30 text-emerald-600 font-black text-xs uppercase tracking-widest px-4 py-2.5 rounded-2xl transform -rotate-3 inline-block animate-pulse"
                                 >
                                     ✅ VÁLIDO / COMPRADO
                                 </div>
                                 <div 
-                                    v-else-if="ticket.estado.toLowerCase() === 'cancelada'"
+                                    v-else-if="ticket.estado.toLowerCase() === 'cancelled'"
                                     class="border-4 border-red-500/30 text-red-600 font-black text-xs uppercase tracking-widest px-4 py-2.5 rounded-2xl transform rotate-3 inline-block bg-red-50"
                                 >
                                     ❌ EVENTO CANCELADO

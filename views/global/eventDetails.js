@@ -47,6 +47,28 @@ export default {
                             <span class="text-slate-600">•</span>
                             <span>📅 {{ formatDate(event?.event_date) }}</span>
                         </p>
+
+                        <!-- Equipos participantes + marcador -->
+                        <div v-if="event?.home_team_name || event?.away_team_name"
+                             class="mt-5 flex items-center gap-4 sm:gap-6">
+                            <div class="text-right flex-1 min-w-0">
+                                <p class="text-[9px] font-black text-cyan-300 uppercase tracking-widest mb-0.5">Local</p>
+                                <p class="text-base sm:text-xl font-black text-white uppercase italic truncate">{{ homeTeamName }}</p>
+                            </div>
+
+                            <div v-if="isPastEvent"
+                                 class="flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-2xl shrink-0">
+                                <span class="text-2xl sm:text-3xl font-black font-mono text-white">{{ homeScore }}</span>
+                                <span class="text-slate-500 font-bold font-mono">:</span>
+                                <span class="text-2xl sm:text-3xl font-black font-mono text-white">{{ awayScore }}</span>
+                            </div>
+                            <span v-else class="text-slate-500 text-lg font-black shrink-0">VS</span>
+
+                            <div class="text-left flex-1 min-w-0">
+                                <p class="text-[9px] font-black text-cyan-300 uppercase tracking-widest mb-0.5">Visitante</p>
+                                <p class="text-base sm:text-xl font-black text-white uppercase italic truncate">{{ awayTeamName }}</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Price & Reserve -->
@@ -123,14 +145,14 @@ export default {
                                                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Ubicación</p>
                                                 <p class="text-sm font-bold text-slate-800 mt-1">{{ event?.location }}</p>
                                             </div>
-                                            <div>
+                                            <div v-if="!isPastEvent">
                                                 <p class="text-[9px] font-black text-slate-400 uppercase tracking-wider">Precio Ticket</p>
                                                 <p class="text-lg font-black text-emerald-600 mt-1">$ {{ event?.ticket_price }}</p>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div class="mt-8 pt-5 border-t border-slate-100 grid grid-cols-2 gap-4 text-slate-500 text-xs">
+                                    <div v-if="!isPastEvent" class="mt-8 pt-5 border-t border-slate-100 grid grid-cols-2 gap-4 text-slate-500 text-xs">
                                         <div class="bg-slate-50 p-4 rounded-xl">
                                             <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-0.5">Tickets Totales</span>
                                             <b class="text-slate-800 text-base font-black">{{ event?.total_tickets }}</b>
@@ -449,10 +471,9 @@ export default {
         isPastEvent() {
             if (this.isFinalized) return true;
             if (this.event?.event_date) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const eventDate = new Date(this.event.event_date);
-                if (eventDate < today) return true;
+                // Comparar como strings YYYY-MM-DD para evitar desfase UTC/local
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (this.event.event_date < todayStr) return true;
             }
             return false;
         },
@@ -461,7 +482,8 @@ export default {
                 { id: 'info', label: 'Detalles' },
                 { id: 'roster', label: 'Roster / Equipos' }
             ];
-            if (this.isFinalized) {
+            // Mostrar marcador/clasificación para eventos ya ocurridos (no solo los marcados 'finalizado')
+            if (this.isPastEvent) {
                 if (this.event?.sport === 'otro') {
                     tabs.push({ id: 'rankings', label: 'Clasificación / Rankings' });
                 } else {
@@ -471,60 +493,61 @@ export default {
             return tabs;
         },
         homeTeamName() {
-            return this.stats?.equipo_local?.name || 'Local';
+            return this.event?.home_team_name || 'Local';
         },
         awayTeamName() {
-            return this.stats?.equipo_visitante?.name || 'Visitante';
+            return this.event?.away_team_name || 'Visitante';
         },
         homeScore() {
-            return this.stats?.marcador?.home_score ?? 0;
+            return this.event?.home_score ?? 0;
         },
         awayScore() {
-            return this.stats?.marcador?.away_score ?? 0;
+            return this.event?.away_score ?? 0;
         },
         localRoster() {
-            if (!this.stats?.equipo_local) return this.players;
-            const localId = this.stats.equipo_local.id;
-            return this.players.filter(p => p.team_id === localId);
+            return this.players.filter(p => p.is_home === 1);
         },
         visitanteRoster() {
-            if (!this.stats?.equipo_visitante) return [];
-            const awayId = this.stats.equipo_visitante.id;
-            return this.players.filter(p => p.team_id === awayId);
+            // if (!this.stats?.equipo_visitante) return [];
+            return this.players.filter(p => p.is_home === 0);
         },
         hasTeamStats() {
-            return this.stats?.stats_equipos && (this.event?.sport === 'futbol' || this.event?.sport === 'basquetbol' || this.event?.sport === 'beisbol');
+            const sportOk = ['futbol', 'basquetbol', 'beisbol'].includes(this.event?.sport);
+            return sportOk && !!(this.stats && (this.stats.home || this.stats.away));
         },
         teamStatsMap() {
             if (!this.hasTeamStats) return {};
             const sport = this.event?.sport;
-            const s = this.stats.stats_equipos;
+            // El API devuelve { home, away } con las columnas crudas de *_team_stats
+            const h = this.stats.home || {};
+            const a = this.stats.away || {};
             if (sport === 'futbol') {
                 return {
-                    'Posesión del Balón': { local: s.local.posesion, visitante: s.visitante.posesion, unit: '%' },
-                    'Remates Totales': { local: s.local.remates, visitante: s.visitante.remates },
-                    'Remates al Arco': { local: s.local.remates_arco, visitante: s.visitante.remates_arco },
-                    'Tiros de Esquina': { local: s.local.tiros_esquina, visitante: s.visitante.tiros_esquina },
-                    'Faltas': { local: s.local.faltas, visitante: s.visitante.faltas },
-                    'Tarjetas Amarillas': { local: s.local.amarillas, visitante: s.visitante.amarillas },
-                    'Tarjetas Rojas': { local: s.local.rojas, visitante: s.visitante.rojas }
+                    'Posesión del Balón': { local: h.possession ?? 0, visitante: a.possession ?? 0, unit: '%' },
+                    'Remates Totales': { local: h.total_shots ?? 0, visitante: a.total_shots ?? 0 },
+                    'Remates al Arco': { local: h.shots_on_target ?? 0, visitante: a.shots_on_target ?? 0 },
+                    'Tiros de Esquina': { local: h.corners ?? 0, visitante: a.corners ?? 0 },
+                    'Faltas': { local: h.fouls ?? 0, visitante: a.fouls ?? 0 },
+                    'Tarjetas Amarillas': { local: h.yellow_cards ?? 0, visitante: a.yellow_cards ?? 0 },
+                    'Tarjetas Rojas': { local: h.red_cards ?? 0, visitante: a.red_cards ?? 0 },
+                    'Fueras de Juego': { local: h.offsides ?? 0, visitante: a.offsides ?? 0 }
                 };
             } else if (sport === 'beisbol') {
                 return {
-                    'Carreras': { local: s.local.carreras, visitante: s.visitante.carreras },
-                    'Hits Realizados': { local: s.local.hits, visitante: s.visitante.hits },
-                    'Errores de Fildeo': { local: s.local.errores, visitante: s.visitante.errores },
-                    'Dejados en Base': { local: s.local.dejados_base, visitante: s.visitante.dejados_base }
+                    'Carreras': { local: h.runs ?? 0, visitante: a.runs ?? 0 },
+                    'Hits Realizados': { local: h.hits ?? 0, visitante: a.hits ?? 0 },
+                    'Errores de Fildeo': { local: h.errors ?? 0, visitante: a.errors ?? 0 },
+                    'Dejados en Base': { local: h.left_on_base ?? 0, visitante: a.left_on_base ?? 0 }
                 };
             } else if (sport === 'basquetbol') {
                 return {
-                    'Puntos Totales': { local: s.local.puntos, visitante: s.visitante.puntos },
-                    'Rebotes Totales': { local: s.local.rebotes, visitante: s.visitante.rebotes },
-                    'Asistencias': { local: s.local.asistencias, visitante: s.visitante.asistencias },
-                    'Pérdidas': { local: s.local.perdidas, visitante: s.visitante.perdidas },
-                    'Faltas de Equipo': { local: s.local.faltas, visitante: s.visitante.faltas },
-                    '% Tiros de Campo': { local: s.local.porcentaje_tiros, visitante: s.visitante.porcentaje_tiros, unit: '%' },
-                    '% Tiros Triples': { local: s.local.porcentaje_triples, visitante: s.visitante.porcentaje_triples, unit: '%' }
+                    'Puntos Totales': { local: h.points ?? 0, visitante: a.points ?? 0 },
+                    'Rebotes Totales': { local: h.rebounds ?? 0, visitante: a.rebounds ?? 0 },
+                    'Asistencias': { local: h.assists ?? 0, visitante: a.assists ?? 0 },
+                    'Pérdidas': { local: h.turnovers ?? 0, visitante: a.turnovers ?? 0 },
+                    'Faltas de Equipo': { local: h.fouls ?? 0, visitante: a.fouls ?? 0 },
+                    '% Tiros de Campo': { local: h.fg_pct ?? 0, visitante: a.fg_pct ?? 0, unit: '%' },
+                    '% Tiros Triples': { local: h.three_pct ?? 0, visitante: a.three_pct ?? 0, unit: '%' }
                 };
             }
             return {};

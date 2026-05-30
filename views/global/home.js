@@ -54,7 +54,7 @@ export default {
       </section>
 
     <!-- How it works section -->
-    <section class="bg-white py-32">
+    <section class="bg-white py-32" id="comofunciona">
       <div class="max-w-6xl mx-auto px-6 sm:px-10">
         <div class="text-center mb-20">
           <span class="text-[#06B6D4] text-sm uppercase tracking-widest" style="font-weight: 700">

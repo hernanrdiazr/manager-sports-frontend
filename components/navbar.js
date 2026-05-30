@@ -11,15 +11,7 @@ export default {
           </span>
         </div>
 
-        <!-- Desktop Nav -->
-        <nav class="hidden min-[1200px]:flex items-center gap-8">
-          <!-- Ahora navItems existe en data(), por lo que esto funcionará -->
-          <a v-for="item in navItems" :key="item" href="#" 
-             class="text-slate-400 hover:text-white transition-colors duration-200 text-sm" 
-             style="font-weight: 500">
-            {{ item }}
-          </a>
-        </nav>
+
 
         <div class="hidden min-[1200px]:flex items-center gap-3">
           <router-link to="/login" class="text-slate-400 hover:text-white text-sm transition-colors" style="font-weight: 500">
@@ -39,8 +31,8 @@ export default {
 
       <!-- Mobile Menu -->
       <div v-if="menuOpen" class="min-[1200px]:hidden border-t border-slate-800 px-6 py-6 flex flex-col gap-4">
-        <a v-for="item in navItems" :key="item" href="#" class="text-slate-400 hover:text-white transition-colors text-sm" style="font-weight: 500">
-          {{ item }}
+        <a v-for="item in navItems" :key="item.title" :href="item.link" class="text-slate-400 hover:text-white transition-colors text-sm" style="font-weight: 500">
+          {{ item.title }}
         </a>
         <div class="pt-2 flex flex-col gap-3">
           <router-link to="/login" class="text-slate-400 text-sm text-center" style="font-weight: 500">Iniciar sesión</router-link>
@@ -52,7 +44,7 @@ export default {
   data() {
     return {
       menuOpen: false,
-      navItems: ["¿Quiénes somos?", "¿Cómo funciona?", "Eventos", "Rankings y Estadísticas", "Contáctanos"]
+      navItems: [{title:"¿Quiénes somos?", link:""}, {title:"¿Cómo funciona?", link:"#comofunciona"}, {title:"Eventos", link:""}, {title:"Rankings y Estadísticas", link:""}, {title:"Contáctanos", link:""}]
     };
   },
   methods: {

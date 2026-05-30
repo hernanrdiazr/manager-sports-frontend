@@ -97,18 +97,23 @@ export function getTeamPlayers(teamId) {
 
 export function getEvents() {
     return query(`
-        SELECT id, name AS organizer, sport, event_date, location,
-               available_tickets, total_tickets_capacity AS total_tickets,
-               ticket_price, status, '' AS estado_partido,
-               home_team_id, away_team_id, home_score, away_score,
-               lat, lon, description
-        FROM events ORDER BY created_at DESC
+        SELECT e.id, e.name AS organizer, e.sport, e.event_date, e.location,
+               e.available_tickets, e.total_tickets_capacity AS total_tickets,
+               e.ticket_price, e.status, '' AS estado_partido,
+               e.home_team_id, e.away_team_id, e.home_score, e.away_score,
+               e.lat, e.lon, e.description,
+               ht.name AS home_team_name, at.name AS away_team_name
+        FROM events e
+        LEFT JOIN teams ht ON e.home_team_id = ht.id
+        LEFT JOIN teams at ON e.away_team_id = at.id
+        ORDER BY e.created_at DESC
     `);
 }
 
 export function getEvent(id) {
     const event = queryOne(`
-        SELECT e.id, e.name AS organizer, e.sport, e.event_date, e.location,
+        SELECT e.id, e.name, e.name AS organizer, e.sport, e.event_date,
+               e.start_time, e.end_time, e.location,
                e.available_tickets, e.total_tickets_capacity AS total_tickets,
                e.ticket_price, e.status, e.lat, e.lon, e.description,
                e.home_score, e.away_score,
@@ -143,7 +148,7 @@ export function getEvent(id) {
 export async function createEvent(payload) {
     const {
         organizer, sport, description = '', event_date, start_time, end_time,
-        location, total_tickets, ticket_price, home_team_id, away_team_id
+        location, total_tickets_capacity, ticket_price, home_team_id, away_team_id
     } = payload;
 
     if (!home_team_id || !away_team_id) throw new Error('Debes seleccionar ambos equipos');
@@ -154,7 +159,7 @@ export async function createEvent(payload) {
          total_tickets_capacity, available_tickets, ticket_price, status, home_team_id, away_team_id)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activo', ?, ?)`,
         [organizer, description, sport, event_date, start_time, end_time, location,
-         total_tickets, total_tickets, ticket_price, home_team_id, away_team_id]
+         total_tickets_capacity, total_tickets_capacity, ticket_price, home_team_id, away_team_id]
     );
     const eventId = lastId();
     await save();
@@ -208,13 +213,17 @@ function insertPlayerStats(sport, playerId, eventId, playerData) {
 }
 
 export function getEventPlayers(eventId) {
+    // Une los jugadores directamente a los dos equipos del evento (local y visitante),
+    // incluyendo nombre del equipo e indicador is_home para agrupar en el roster.
     return query(
-        `SELECT p.id, p.team_id, p.name, p.jersey_number, p.position, p.is_starter, p.status
-         FROM players p
-         INNER JOIN teams t ON p.team_id = t.id
-         INNER JOIN events e ON (e.home_team_id = t.id OR e.away_team_id = t.id)
+        `SELECT p.id, p.team_id, p.name, p.jersey_number, p.position, p.is_starter, p.status,
+                t.name AS team_name,
+                CASE WHEN e.home_team_id = p.team_id THEN 1 ELSE 0 END AS is_home
+         FROM events e
+         INNER JOIN players p ON p.team_id IN (e.home_team_id, e.away_team_id)
+         INNER JOIN teams t ON t.id = p.team_id
          WHERE e.id = ?
-         ORDER BY t.id, p.jersey_number`,
+         ORDER BY is_home DESC, p.jersey_number`,
         [eventId]
     );
 }
@@ -234,9 +243,10 @@ export function getEventTeams(eventId) {
     return query(
         `SELECT t.id, t.name,
                 CASE WHEN e.home_team_id = t.id THEN 1 ELSE 0 END AS is_home
-         FROM teams t
-         INNER JOIN events e ON (e.home_team_id = t.id OR e.away_team_id = t.id)
-         WHERE e.id = ?`,
+         FROM events e
+         INNER JOIN teams t ON t.id IN (e.home_team_id, e.away_team_id)
+         WHERE e.id = ?
+         ORDER BY is_home DESC`,
         [eventId]
     );
 }
@@ -413,6 +423,44 @@ export async function updatePlayerStats(playerId, sport, eventId, body) {
     return { message: 'Estadísticas actualizadas' };
 }
 
+// === Team stats ===
+
+const TEAM_STATS_TABLES = {
+    futbol:     { table: 'soccer_team_stats',     cols: ['possession', 'total_shots', 'shots_on_target', 'corners', 'fouls', 'yellow_cards', 'red_cards', 'offsides'] },
+    beisbol:    { table: 'baseball_team_stats',   cols: ['runs', 'hits', 'errors', 'left_on_base'] },
+    basquetbol: { table: 'basketball_team_stats', cols: ['points', 'rebounds', 'assists', 'turnovers', 'fouls', 'fg_pct', 'three_pct'] }
+};
+
+export function getTeamStats(eventId, sport) {
+    const cfg = TEAM_STATS_TABLES[sport];
+    const ev = queryOne('SELECT home_team_id, away_team_id FROM events WHERE id = ?', [eventId]);
+    if (!ev) throw new Error('Evento no encontrado');
+    if (!cfg) return { home: null, away: null, home_team_id: ev.home_team_id, away_team_id: ev.away_team_id };
+
+    const home = queryOne(`SELECT * FROM ${cfg.table} WHERE event_id = ? AND team_id = ?`, [eventId, ev.home_team_id]);
+    const away = queryOne(`SELECT * FROM ${cfg.table} WHERE event_id = ? AND team_id = ?`, [eventId, ev.away_team_id]);
+    return { home, away, home_team_id: ev.home_team_id, away_team_id: ev.away_team_id };
+}
+
+export async function updateTeamStats(eventId, teamId, sport, body) {
+    const cfg = TEAM_STATS_TABLES[sport];
+    if (!cfg) throw new Error('Este deporte no maneja estadísticas de equipo');
+
+    const cols = cfg.cols;
+    const placeholders = cols.map(() => '?').join(', ');
+    const updates = cols.map(c => `${c}=excluded.${c}`).join(', ');
+    const values = cols.map(c => body[c] ?? 0);
+
+    run(
+        `INSERT INTO ${cfg.table} (team_id, event_id, ${cols.join(', ')})
+         VALUES (?, ?, ${placeholders})
+         ON CONFLICT(team_id, event_id) DO UPDATE SET ${updates}`,
+        [teamId, eventId, ...values]
+    );
+    await save();
+    return { message: 'Estadísticas de equipo actualizadas' };
+}
+
 // === Fouls ===
 
 export async function registerFoul(playerId, { event_id, foul_type, description, minute }) {
@@ -490,4 +538,173 @@ export async function approveReservation(reservationId) {
     );
     await save();
     return { message: 'Reservación aprobada' };
+}
+
+
+
+export function getEventsList(startDate, endDate, sport, limit = 100, offset = 0) {
+    const { and, params } = buildFilters({ startDate, endDate, sport, alias: 'e' });
+    params.push(limit, offset);
+    return query(`
+        SELECT e.id, e.name AS organizer, e.sport, e.event_date, e.location,
+               e.available_tickets, e.total_tickets_capacity, e.ticket_price,
+               e.status, e.home_score, e.away_score,
+               ht.name AS home_team_name, at.name AS away_team_name
+        FROM events e
+        LEFT JOIN teams ht ON e.home_team_id = ht.id
+        LEFT JOIN teams at ON e.away_team_id = at.id
+        WHERE 1=1 ${and}
+        ORDER BY e.event_date ASC, e.id ASC
+        LIMIT ? OFFSET ?
+    `, params);
+}
+
+// === Dashboard stats ===
+
+// Victorias por equipo — reemplaza match_results por scores en events, usa parámetros ?
+export function getStatsByTeam(startDate, endDate, sport) {
+    return query(`
+        SELECT t.id AS win_team_id, t.name, COUNT(*) AS wins
+        FROM (
+            SELECT
+                CASE
+                    WHEN away_score > home_score THEN away_team_id
+                    WHEN away_score < home_score THEN home_team_id
+                    ELSE NULL
+                END AS win_team_id
+            FROM events
+            WHERE event_date >= ? AND event_date <= ? AND sport = ?
+        ) AS results
+        INNER JOIN teams t ON results.win_team_id = t.id
+        WHERE results.win_team_id IS NOT NULL
+        GROUP BY t.id, t.name
+        ORDER BY wins DESC
+    `, [startDate, endDate, sport]);
+}
+
+
+// Tabla de posiciones — reemplaza match_results por events, sport se pasa 3 veces como ?
+export function getRankingTeams(sport) {
+    return query(`
+        WITH partidos_equipo AS (
+            SELECT home_team_id AS team_id, home_score AS gf, away_score AS gc,
+                CASE WHEN home_score > away_score THEN 'win'
+                     WHEN home_score = away_score THEN 'draw' ELSE 'loss' END AS resultado
+            FROM events WHERE sport = ?
+            UNION ALL
+            SELECT away_team_id AS team_id, away_score AS gf, home_score AS gc,
+                CASE WHEN away_score > home_score THEN 'win'
+                     WHEN away_score = home_score THEN 'draw' ELSE 'loss' END AS resultado
+            FROM events WHERE sport = ?
+        ),
+        estadisticas AS (
+            SELECT t.name AS club,
+                COUNT(*)                                                             AS pj,
+                SUM(CASE WHEN resultado = 'win'  THEN 1 ELSE 0 END)                 AS g,
+                SUM(CASE WHEN resultado = 'draw' THEN 1 ELSE 0 END)                 AS e,
+                SUM(CASE WHEN resultado = 'loss' THEN 1 ELSE 0 END)                 AS p,
+                SUM(gf) AS gf, SUM(gc) AS gc, SUM(gf) - SUM(gc) AS dg,
+                SUM(CASE WHEN ? = 'futbol'
+                    THEN CASE WHEN resultado = 'win' THEN 3 WHEN resultado = 'draw' THEN 1 ELSE 0 END
+                    ELSE CASE WHEN resultado = 'win' THEN 2 WHEN resultado = 'draw' THEN 1 ELSE 0 END
+                END) AS pts
+            FROM partidos_equipo pe
+            JOIN teams t ON pe.team_id = t.id
+            GROUP BY t.id, t.name
+        )
+        SELECT club, pj, g, e, p, gf, gc, dg, pts
+        FROM estadisticas
+        ORDER BY pts DESC, dg DESC, gf DESC
+    `, [sport, sport, sport]);
+}
+
+
+// Construye cláusulas WHERE opcionales (fecha, deporte, evento) para queries sobre events.
+// Cada filtro se omite si su valor es vacío/null, de modo que sin filtros devuelve todos los eventos.
+function buildFilters({ startDate, endDate, sport, eventId, alias = '' }) {
+    const col = alias ? `${alias}.` : '';
+    const clauses = [];
+    const params = [];
+    if (startDate) { clauses.push(`${col}event_date >= ?`); params.push(startDate); }
+    if (endDate)   { clauses.push(`${col}event_date <= ?`); params.push(endDate); }
+    if (sport)     { clauses.push(`${col}sport = ?`);       params.push(sport); }
+    if (eventId)   { clauses.push(`${col}id = ?`);          params.push(eventId); }
+    return { and: clauses.length ? 'AND ' + clauses.join(' AND ') : '', params };
+}
+
+export function getIndicatorsGestion(startDate, endDate, sport, eventId) {
+    const { and, params } = buildFilters({ startDate, endDate, sport, eventId });
+    return queryOne(`
+        SELECT
+            COALESCE(SUM(total_tickets_capacity - available_tickets), 0) AS total_asistentes,
+            ROUND(SUM(total_tickets_capacity - available_tickets) * 100.0
+                / NULLIF(SUM(total_tickets_capacity), 0), 2)              AS porcentaje_ocupacion,
+            COALESCE(SUM((total_tickets_capacity - available_tickets) * ticket_price), 0) AS ingresos_totales,
+            ROUND(SUM((total_tickets_capacity - available_tickets) * ticket_price) * 1.0
+                / NULLIF(COUNT(*), 0), 2)                                 AS promedio_ingreso_por_evento
+        FROM events
+        WHERE 1=1 ${and}
+    `, params);
+}
+
+export function getCantUsers() {
+    return queryOne(`SELECT COUNT(*) AS cantidad_usuarios FROM users WHERE role = 'user'`);
+}
+
+export function getFunnelData(startDate, endDate, sport, eventId) {
+    const cap = buildFilters({ startDate, endDate, sport, eventId });
+    const capacidad = queryOne(
+        `SELECT COALESCE(SUM(total_tickets_capacity), 0) AS v
+         FROM events WHERE 1=1 ${cap.and}`,
+        cap.params
+    )?.v || 0;
+
+    // Para reservaciones: fecha/deporte sobre el evento (alias e), pero eventId sobre r.event_id
+    const rClauses = [];
+    const rParams = [];
+    if (startDate) { rClauses.push('e.event_date >= ?'); rParams.push(startDate); }
+    if (endDate)   { rClauses.push('e.event_date <= ?'); rParams.push(endDate); }
+    if (sport)     { rClauses.push('e.sport = ?');       rParams.push(sport); }
+    if (eventId)   { rClauses.push('r.event_id = ?');    rParams.push(eventId); }
+    const rAnd = rClauses.length ? 'AND ' + rClauses.join(' AND ') : '';
+
+    const reservaciones = queryOne(
+        `SELECT COALESCE(SUM(r.ticket_count), 0) AS v
+         FROM reservations r INNER JOIN events e ON r.event_id = e.id
+         WHERE 1=1 ${rAnd}`,
+        rParams
+    )?.v || 0;
+
+    const confirmados = queryOne(
+        `SELECT COALESCE(SUM(r.ticket_count), 0) AS v
+         FROM reservations r INNER JOIN events e ON r.event_id = e.id
+         WHERE r.status = 'approved' ${rAnd}`,
+        rParams
+    )?.v || 0;
+
+    return { capacidad, reservaciones, confirmados };
+}
+
+export function getEventsHistory(startDate, endDate, sport, eventId) {
+    const { and, params } = buildFilters({ startDate, endDate, sport, eventId, alias: 'a' });
+    return query(`
+        SELECT a.id, a.name AS evento, a.event_date, a.sport, b.ticket_count, b.status
+        FROM events a
+        INNER JOIN reservations b ON a.id = b.event_id
+        WHERE b.status = 'approved' ${and}
+        ORDER BY a.event_date ASC
+    `, params);
+}
+
+// Tickets vendidos agrupados por día (sumando todos los eventos de esa fecha)
+export function getTicketsByDay(startDate, endDate, sport, eventId) {
+    const { and, params } = buildFilters({ startDate, endDate, sport, eventId, alias: 'a' });
+    return query(`
+        SELECT a.event_date, SUM(b.ticket_count) AS ticket_count
+        FROM events a
+        INNER JOIN reservations b ON a.id = b.event_id
+        WHERE b.status = 'approved' ${and}
+        GROUP BY a.event_date
+        ORDER BY a.event_date ASC
+    `, params);
 }

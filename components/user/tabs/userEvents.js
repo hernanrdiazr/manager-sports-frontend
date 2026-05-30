@@ -18,12 +18,21 @@ const EventCard = {
                 </div>
                 
                 <h3 class="text-xl font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">{{ sportEvent.name || sportEvent.organizer }}</h3>
+
+                <!-- Equipos participantes -->
+                <div v-if="sportEvent.home_team_name || sportEvent.away_team_name"
+                     class="flex items-center justify-center gap-2 mb-4 py-2 px-3 bg-slate-50 rounded-xl">
+                    <span class="text-sm font-bold text-gray-800 text-center line-clamp-1 flex-1">{{ sportEvent.home_team_name || 'Local' }}</span>
+                    <span class="text-[10px] font-black text-slate-400 uppercase shrink-0">vs</span>
+                    <span class="text-sm font-bold text-gray-800 text-center line-clamp-1 flex-1">{{ sportEvent.away_team_name || 'Visitante' }}</span>
+                </div>
+
                 <p class="text-xs font-bold text-gray-500 mb-6 flex items-center gap-2 uppercase tracking-wide">
-                    <span class="text-blue-500 text-lg">📍</span> 
+                    <span class="text-blue-500 text-lg">📍</span>
                     <span class="line-clamp-1">{{ sportEvent.location }}</span>
                 </p>
                 
-                <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                <div v-if="!isFinalized(sportEvent)" class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
                     <div>
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Precio</p>
                         <p class="text-xl font-black text-emerald-500">\${{ sportEvent.ticket_price || 0 }}</p>
@@ -145,7 +154,7 @@ export default {
                             class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
                             :class="viewMode === 'finalized' ? 'bg-[#0f172a] text-white shadow' : 'text-slate-500 hover:text-slate-800'"
                         >
-                            🏆 Resultados
+                            🏆 Finalizados
                         </button>
                     </div>
 

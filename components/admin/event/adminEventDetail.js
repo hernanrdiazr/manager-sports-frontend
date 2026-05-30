@@ -14,6 +14,8 @@ import {
     attendanceRequiresNote,
     getHomeTeamName,
     getAwayTeamName,
+    getTeamStatFields,
+    getDefaultTeamStats,
     ATTENDANCE_STATUSES,
     PLAYER_STATUSES
 } from './eventSportConfig.js';
@@ -273,6 +275,54 @@ export default {
                         </div>
                     </div>
 
+                    <!-- Stats de equipos -->
+                    <div v-else-if="activeTab === 'equipos'">
+                        <div v-if="!teamStatFields.length" class="text-center py-12 text-slate-400 text-sm">
+                            Este deporte no maneja estadísticas de equipo.
+                        </div>
+                        <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                            <!-- Local -->
+                            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded font-semibold uppercase">Local</span>
+                                    <h4 class="text-sm font-semibold text-gray-900 truncate">{{ homeTeamName }}</h4>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div v-for="f in teamStatFields" :key="'h-'+f.key">
+                                        <label class="text-xs font-medium text-slate-600">{{ f.label }}</label>
+                                        <input v-model.number="teamStatsForm.home[f.key]" type="number"
+                                               :min="f.min" :max="f.max"
+                                               class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
+                                    </div>
+                                </div>
+                                <button @click="saveTeamStats('home')" :disabled="saving"
+                                        class="mt-4 bg-[#2563EB] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50">
+                                    Guardar stats local
+                                </button>
+                            </div>
+
+                            <!-- Visitante -->
+                            <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <span class="text-[10px] px-2 py-0.5 bg-cyan-50 text-cyan-600 rounded font-semibold uppercase">Visitante</span>
+                                    <h4 class="text-sm font-semibold text-gray-900 truncate">{{ awayTeamName }}</h4>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div v-for="f in teamStatFields" :key="'a-'+f.key">
+                                        <label class="text-xs font-medium text-slate-600">{{ f.label }}</label>
+                                        <input v-model.number="teamStatsForm.away[f.key]" type="number"
+                                               :min="f.min" :max="f.max"
+                                               class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
+                                    </div>
+                                </div>
+                                <button @click="saveTeamStats('away')" :disabled="saving"
+                                        class="mt-4 bg-[#2563EB] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50">
+                                    Guardar stats visitante
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Fallas -->
                     <div v-else-if="activeTab === 'fallas'">
                         <form @submit.prevent="registerFoul" class="mb-6 p-5 bg-amber-50/60 rounded-2xl border border-amber-100 space-y-4">
@@ -350,11 +400,14 @@ export default {
             foulErrors: {},
             newPlayer: { team_id: null, name: '', jersey_number: 1, position: '', is_starter: true },
             newFoul: { player_id: null, foul_type: '', description: '', minute: null },
+            teamStatsForm: { home: {}, away: {} },
+            homeTeamId: null,
+            awayTeamId: null,
             tabs: [
                 { id: 'puntuacion', label: 'Marcador', hint: 'Resultado' },
-                { id: 'jugadores', label: 'Plantilla', hint: 'Altas y estado' },
                 { id: 'asistencia', label: 'Asistencia', hint: 'Presencia' },
-                { id: 'estadisticas', label: 'Estadísticas', hint: 'Por jugador' },
+                { id: 'equipos', label: 'Stats Equipos', hint: 'Estadísticas por equipo' },
+                { id: 'estadisticas', label: 'Stats Jugadores', hint: 'Por jugador' },
                 { id: 'fallas', label: 'Infracciones', hint: 'Tarjetas / faltas' }
             ]
         };
@@ -377,20 +430,26 @@ export default {
             const map = {};
             this.players.forEach(p => {
                 if (!map[p.team_id]) {
+                    // Preferir el nombre que viene en el propio jugador; si no, buscar en teams
                     const team = this.teams.find(t => t.id === p.team_id);
                     map[p.team_id] = {
                         teamId: p.team_id,
-                        teamName: team?.name || `Equipo #${p.team_id}`,
+                        teamName: p.team_name || team?.name || `Equipo #${p.team_id}`,
+                        isHome: p.is_home,
                         players: []
                     };
                 }
                 map[p.team_id].players.push(p);
             });
-            return Object.values(map);
+            // Local primero, visitante después
+            return Object.values(map).sort((a, b) => (b.isHome || 0) - (a.isHome || 0));
         },
         statGroups() {
             if (!this.selectedPlayer) return [];
             return getStatFieldGroups(this.sport, this.statsForm, this.selectedPlayer);
+        },
+        teamStatFields() {
+            return getTeamStatFields(this.sport);
         },
         activeTabHint() {
             return this.tabs.find(t => t.id === this.activeTab)?.hint || '';
@@ -461,6 +520,7 @@ export default {
                     } catch {
                         this.scoreForm = { home_score: 0, away_score: 0 };
                     }
+                    await this.loadTeamStats();
                 }
                 this.initAttendanceDraft();
                 this.initFoulDefaults();
@@ -538,6 +598,42 @@ export default {
                 else await api.patch(`/events/${this.event.id}/score`, this.scoreForm);
                 this.showToast('Marcador actualizado');
                 this.$emit('updated');
+            } catch (e) {
+                this.error = e.message;
+            } finally {
+                this.saving = false;
+            }
+        },
+
+        async loadTeamStats() {
+            // 'otro' no tiene tabla de stats de equipo
+            if (!this.teamStatFields.length) return;
+            try {
+                const data = await api.get(`/events/${this.event.id}/team-stats?sport=${this.sport}`);
+                this.homeTeamId = data.home_team_id;
+                this.awayTeamId = data.away_team_id;
+                const base = getDefaultTeamStats(this.sport);
+                this.teamStatsForm = {
+                    home: { ...base, ...(data.home || {}) },
+                    away: { ...base, ...(data.away || {}) }
+                };
+            } catch {
+                const base = getDefaultTeamStats(this.sport);
+                this.teamStatsForm = { home: { ...base }, away: { ...base } };
+            }
+        },
+
+        async saveTeamStats(side) {
+            const teamId = side === 'home' ? this.homeTeamId : this.awayTeamId;
+            if (!teamId) { this.error = 'No se encontró el equipo para guardar.'; return; }
+            this.saving = true;
+            this.error = null;
+            try {
+                await api.patch(
+                    `/teams/${teamId}/team-stats?sport=${this.sport}&event_id=${this.event.id}`,
+                    this.teamStatsForm[side]
+                );
+                this.showToast(side === 'home' ? 'Stats del local guardadas' : 'Stats del visitante guardadas');
             } catch (e) {
                 this.error = e.message;
             } finally {
