@@ -4,49 +4,49 @@
     <meta charset="UTF-8">
     <title>Sport manager</title>
     
-    <!-- Tailwind Config -->
+    <!-- Tailwind Config (window.tailwind debe definirse ANTES de cargar el CDN) -->
     <script>
-        tailwind.config = {
+        window.tailwind = { config: {
             theme: {
                 extend: {
                     colors: {
-                        primary:   '#2563EB',   // Azul principal — botones CTA, logo, gradientes
-                        'primary-dark': '#1d4ed8', // Hover del botón primario
-                        secondary: '#06B6D4',   // Cian — íconos, badges, etiquetas
-                        dark:      '#0F172A',   // Header, footer, fondo dark
+                        primary:        '#2563EB',
+                        'primary-dark': '#1d4ed8',
+                        secondary:      '#06B6D4',
+                        dark:           '#0F172A',
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
                     },
                     animation: {
-                        'spin-slow': 'spin 1.5s linear infinite',
-                        'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
-                        'loading-bar': 'loadingBar 2s ease-in-out infinite',
-                        'fade-in': 'fadeIn 0.3s ease-out',
-                        'slide-up': 'slideUp 0.3s ease-out',
+                        'spin-slow':    'spin 1.5s linear infinite',
+                        'pulse-glow':   'pulseGlow 2s ease-in-out infinite',
+                        'loading-bar':  'loadingBar 2s ease-in-out infinite',
+                        'fade-in':      'fadeIn 0.3s ease-out',
+                        'slide-up':     'slideUp 0.3s ease-out',
                     },
                     keyframes: {
                         pulseGlow: {
                             '0%, 100%': { opacity: '0.5', filter: 'blur(0px)' },
-                            '50%': { opacity: '1', filter: 'blur(1px)' },
+                            '50%':      { opacity: '1',   filter: 'blur(1px)' },
                         },
                         loadingBar: {
-                            '0%': { width: '0%', marginLeft: '0' },
-                            '50%': { width: '70%', marginLeft: '15%' },
-                            '100%': { width: '0%', marginLeft: '100%' },
+                            '0%':   { width: '0%',  marginLeft: '0' },
+                            '50%':  { width: '70%', marginLeft: '15%' },
+                            '100%': { width: '0%',  marginLeft: '100%' },
                         },
                         fadeIn: {
-                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '0%':   { opacity: '0', transform: 'translateY(10px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
                         },
                         slideUp: {
-                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '0%':   { opacity: '0', transform: 'translateY(20px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
                         },
                     },
                 },
             },
-        }
+        }};
     </script>
     
     <!-- Fuentes -->
@@ -145,6 +145,54 @@
     </style>
 </head>
 <body>
+    <!-- DB Setup Overlay -->
+    <div id="db-setup" class="fixed inset-0 z-[200] flex items-center justify-center bg-[#0F172A]">
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-8 max-w-sm w-full mx-4 text-center">
+            <div class="w-14 h-14 bg-[#2563EB]/20 rounded-full flex items-center justify-center mx-auto mb-5">
+                <svg class="w-7 h-7 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 2.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125m16.5 5.625c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/>
+                </svg>
+            </div>
+            <h2 class="text-white text-xl font-bold mb-2">Base de datos</h2>
+            <p id="db-status-msg" class="text-slate-400 text-sm mb-6">Selecciona o crea un archivo de base de datos para continuar.</p>
+
+            <!-- Botones para primera vez -->
+            <div id="db-buttons" class="space-y-3">
+                <button id="btn-open-db"
+                    class="w-full bg-[#2563EB] hover:bg-[#1d4ed8] text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors">
+                    Abrir BD existente
+                </button>
+                <button id="btn-new-db"
+                    class="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors">
+                    Crear nueva BD
+                </button>
+            </div>
+
+            <!-- Botón para cuando ya hay handle guardado -->
+            <div id="db-continue" class="space-y-3" style="display:none">
+                <button id="btn-continue"
+                    class="w-full bg-[#2563EB] hover:bg-[#1d4ed8] text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors">
+                    Continuar con <span id="db-filename" class="font-mono"></span>
+                </button>
+                <button id="btn-pick-other"
+                    class="w-full bg-white/10 hover:bg-white/20 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors">
+                    Elegir otro archivo
+                </button>
+            </div>
+
+            <p id="db-error" class="text-red-400 text-xs mt-4" style="display:none"></p>
+
+            <!-- Loader interno del setup -->
+            <div id="db-loading" class="mt-4" style="display:none">
+                <svg class="animate-spin w-6 h-6 text-[#2563EB] mx-auto" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                <p class="text-slate-400 text-xs mt-2">Inicializando base de datos…</p>
+            </div>
+        </div>
+    </div>
+
     <!-- App Container -->
     <div id="app">
         <!-- Loader Global -->
@@ -212,6 +260,10 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/vue-router@4/dist/vue-router.global.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/sql-wasm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <!-- App Principal -->
     <script type="module" src="app.js"></script>

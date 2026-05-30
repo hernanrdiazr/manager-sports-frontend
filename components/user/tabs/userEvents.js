@@ -112,12 +112,9 @@ const EventCard = {
         isFinalized(event) {
             const status = (event.status || '').toLowerCase();
             if (status === 'finalizado' || status === 'finalizada') return true;
-            
             if (event.event_date) {
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const eventDate = new Date(event.event_date);
-                if (eventDate < today) return true;
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (event.event_date < todayStr) return true;
             }
             return false;
         }
@@ -228,7 +225,9 @@ export default {
                 // Filtro de estado / fecha según pestaña seleccionada (viewMode)
                 const status = (event.status || '').toLowerCase();
                 const isFinal = status === 'finalizado' || status === 'finalizada';
-                const isPast = event.event_date && new Date(event.event_date) < today;
+                // Comparar fechas como strings YYYY-MM-DD para evitar desfase UTC/local
+                const todayStr = today.toISOString().split('T')[0];
+                const isPast = event.event_date && event.event_date < todayStr;
                 
                 if (this.viewMode === 'upcoming') {
                     // Ocultar eventos finalizados o pasados

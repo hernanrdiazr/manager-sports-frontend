@@ -1,40 +1,12 @@
 import { api } from '../../../services/api.js';
 import eventLocationPicker from '../event/eventLocationPicker.js';
-import {
-    getPlayerPositions,
-    getDefaultStats,
-    getStatsPayloadKey
-} from '../event/eventSportConfig.js';
 
 const SPORTS = [
-    { value: 'futbol', label: 'Fútbol' },
-    { value: 'beisbol', label: 'Béisbol' },
+    { value: 'futbol',     label: 'Fútbol' },
+    { value: 'beisbol',    label: 'Béisbol' },
     { value: 'basquetbol', label: 'Básquetbol' },
-    { value: 'otro', label: 'Otro' }
+    { value: 'otro',       label: 'Otro' }
 ];
-
-function emptyTeam(index) {
-    return {
-        id: Date.now() + index,
-        name: '',
-        is_home: index === 0,
-        players: []
-    };
-}
-
-function emptyPlayer() {
-    return {
-        id: Date.now() + Math.random(),
-        name: '',
-        jersey_number: 1,
-        position: '',
-        is_starter: true
-    };
-}
-
-function pad(n) {
-    return String(n).padStart(2, '0');
-}
 
 export default {
     components: { eventLocationPicker },
@@ -44,11 +16,12 @@ export default {
             <div class="flex items-center justify-between mb-6">
                 <div>
                     <h2 class="text-2xl font-bold text-gray-900">Crear evento deportivo</h2>
-                    <p class="text-sm text-slate-500 mt-0.5">Registra un nuevo evento con equipos y jugadores</p>
+                    <p class="text-sm text-slate-500 mt-0.5">Completa la información y selecciona los equipos participantes</p>
                 </div>
             </div>
 
             <form @keydown.enter.prevent="submitEvent" class="space-y-6">
+
                 <!-- Información del evento -->
                 <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -83,7 +56,8 @@ export default {
                         </div>
                         <div class="sm:col-span-2">
                             <label class="text-xs font-medium text-slate-600">Descripción</label>
-                            <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Descripción del evento" class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"></textarea>
+                            <textarea v-model="form.description" rows="2" maxlength="500" placeholder="Descripción del evento"
+                                      class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30"></textarea>
                         </div>
                     </div>
                 </section>
@@ -101,7 +75,7 @@ export default {
                     <p v-if="errors.location" class="text-xs text-red-500 mt-1">{{ errors.location }}</p>
                 </section>
 
-                <!-- Tickets -->
+                <!-- Boletos -->
                 <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                     <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
                         <svg class="w-4 h-4 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,85 +99,58 @@ export default {
 
                 <!-- Equipos -->
                 <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <h3 class="text-sm font-semibold text-gray-900 mb-1 flex items-center gap-2">
                         <svg class="w-4 h-4 text-[#2563EB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
-                        Equipos (local vs visitante)
+                        Equipos participantes *
                     </h3>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div v-for="(team, ti) in form.teams" :key="team.id"
-                             class="p-4 border rounded-xl"
-                             :class="team.is_home ? 'border-[#2563EB]/30 bg-blue-50/30' : 'border-gray-200'">
-                            <div class="flex items-center justify-between mb-3">
-                                <span class="text-sm font-semibold text-gray-900">
-                                    {{ team.is_home ? '🏠 Local' : '✈️ Visitante' }}
-                                </span>
-                                <label class="flex items-center gap-1.5 text-xs cursor-pointer select-none"
-                                       :class="team.is_home ? 'text-slate-400' : 'text-[#2563EB] font-medium'">
-                                    <input type="radio" name="homeTeam" :value="true"
-                                           @change="setHomeTeam(ti)"
-                                           :checked="team.is_home" class="accent-[#2563EB]" />
-                                    {{ team.is_home ? 'Local' : 'Marcar como local' }}
-                                </label>
-                            </div>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-xs font-medium text-slate-600">Nombre del equipo *</label>
-                                    <input v-model.trim="team.name" maxlength="100" :placeholder="team.is_home ? 'Ej: Tigres UANL' : 'Ej: Rayados MTY'"
-                                           class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
-                                </div>
-                                <div>
-                                    <div class="flex items-center justify-between">
-                                        <label class="text-xs font-medium text-slate-600">Jugadores ({{ team.players.length }})</label>
-                                        <button type="button" @click="addPlayer(ti)" class="text-xs text-[#2563EB] font-medium hover:underline">+ Agregar</button>
-                                    </div>
-                                    <div v-if="team.players.length" class="mt-2 space-y-2">
-                                        <div v-for="(player, pi) in team.players" :key="player.id"
-                                             class="flex flex-wrap items-center gap-2 p-2 bg-white rounded-lg border border-gray-100">
-                                            <input v-model.trim="player.name" maxlength="100" placeholder="Nombre"
-                                                   class="flex-1 min-w-[100px] px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
-                                            <input v-model.number="player.jersey_number" type="number" min="1" max="99" placeholder="#"
-                                                   class="w-14 px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30" />
-                                            <select v-model="player.position"
-                                                    class="px-2.5 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB]/30">
-                                                <option value="" disabled>Posición</option>
-                                                <option v-for="pos in positions" :key="pos.value" :value="pos.value">{{ pos.label }}</option>
-                                            </select>
-                                            <label class="flex items-center gap-1 text-xs whitespace-nowrap">
-                                                <input type="checkbox" v-model="player.is_starter" />
-                                                Titular
-                                            </label>
-                                            <button type="button" @click="removePlayer(ti, pi)" class="p-1 text-red-400 hover:text-red-600">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <p v-else class="text-xs text-slate-400 mt-1">Sin jugadores registrados</p>
-                                </div>
-                            </div>
+                    <p v-if="!form.sport" class="text-xs text-slate-400 mb-4">Selecciona el deporte primero para filtrar los equipos disponibles.</p>
+                    <p v-else-if="filteredTeams.length === 0" class="text-xs text-amber-600 mb-4">
+                        No hay equipos de {{ sportLabel(form.sport) }}. <span class="font-medium">Ve a la sección «Equipos» para crear uno.</span>
+                    </p>
+                    <p v-else class="text-xs text-slate-400 mb-4">{{ filteredTeams.length }} equipo(s) disponibles para {{ sportLabel(form.sport) }}.</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-xs font-medium text-slate-600">Equipo local *</label>
+                            <select v-model.number="form.home_team_id" :disabled="filteredTeams.length === 0"
+                                    :class="inputClass('home_team_id')" @change="errors.home_team_id = null">
+                                <option :value="null" disabled>Seleccionar…</option>
+                                <option v-for="t in filteredTeams" :key="t.id" :value="t.id">{{ t.name }}</option>
+                            </select>
+                            <p v-if="errors.home_team_id" class="text-xs text-red-500 mt-1">{{ errors.home_team_id }}</p>
+                        </div>
+                        <div>
+                            <label class="text-xs font-medium text-slate-600">Equipo visitante *</label>
+                            <select v-model.number="form.away_team_id" :disabled="filteredTeams.length === 0"
+                                    :class="inputClass('away_team_id')" @change="errors.away_team_id = null">
+                                <option :value="null" disabled>Seleccionar…</option>
+                                <option v-for="t in filteredTeams.filter(t => t.id !== form.home_team_id)" :key="t.id" :value="t.id">{{ t.name }}</option>
+                            </select>
+                            <p v-if="errors.away_team_id" class="text-xs text-red-500 mt-1">{{ errors.away_team_id }}</p>
                         </div>
                     </div>
-                    <p v-if="errors.teams" class="text-xs text-red-500 mt-2">{{ errors.teams }}</p>
-                    <p v-if="errors.team_names" class="text-xs text-red-500 mt-1">{{ errors.team_names }}</p>
                 </section>
 
                 <!-- Acciones -->
                 <div class="flex items-center justify-end gap-3">
-                    <button type="button" @click="resetForm" class="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50">
+                    <button type="button" @click="resetForm"
+                            class="px-5 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50">
                         Cancelar
                     </button>
-                    <button type="submit" @click.prevent="submitEvent" :disabled="submitting" class="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50 flex items-center gap-2">
+                    <button type="submit" @click.prevent="submitEvent" :disabled="submitting"
+                            class="bg-[#2563EB] text-white px-6 py-2.5 rounded-xl text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50 flex items-center gap-2">
                         <svg v-if="submitting" class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                         </svg>
-                        {{ submitting ? 'Creando...' : 'Crear evento' }}
+                        {{ submitting ? 'Creando…' : 'Crear evento' }}
                     </button>
                 </div>
 
-                <div v-if="submitError" class="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">{{ submitError }}</div>
+                <div v-if="submitError"   class="bg-red-50 text-red-700 px-4 py-3 rounded-xl text-sm">{{ submitError }}</div>
                 <div v-if="submitSuccess" class="bg-green-50 text-green-800 px-4 py-3 rounded-xl text-sm flex items-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     {{ submitSuccess }}
@@ -215,7 +162,8 @@ export default {
     data() {
         return {
             sports: SPORTS,
-            form: this.getEmptyForm(),
+            allTeams: [],
+            form: this.emptyForm(),
             errors: {},
             submitting: false,
             submitError: null,
@@ -224,32 +172,32 @@ export default {
     },
 
     computed: {
-        positions() {
+        filteredTeams() {
             if (!this.form.sport) return [];
-            return getPlayerPositions(this.form.sport);
+            return this.allTeams.filter(t => t.sport === this.form.sport);
         },
         todayStr() {
             const d = new Date();
             d.setDate(d.getDate() + 1);
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
+            return d.toISOString().split('T')[0];
+        }
+    },
+
+    async created() {
+        try {
+            this.allTeams = await api.get('/teams');
+        } catch (e) {
+            console.error('Error cargando equipos:', e);
         }
     },
 
     methods: {
-        getEmptyForm() {
+        emptyForm() {
             return {
-                organizer: '',
-                sport: '',
-                description: '',
-                event_date: '',
-                start_time: '',
-                location: '',
-                total_tickets: 0,
-                ticket_price: 0,
-                teams: [emptyTeam(0), emptyTeam(1)]
+                organizer: '', sport: '', description: '',
+                event_date: '', start_time: '', location: '',
+                total_tickets: 0, ticket_price: 0,
+                home_team_id: null, away_team_id: null
             };
         },
 
@@ -258,26 +206,17 @@ export default {
             return this.errors[field] ? `${base} border-red-400 bg-red-50/30` : `${base} border-gray-200`;
         },
 
-        setHomeTeam(index) {
-            this.form.teams.forEach((t, i) => { t.is_home = i === index; });
+        sportLabel(sport) {
+            return SPORTS.find(s => s.value === sport)?.label || sport;
         },
 
         onSportChange() {
-            if (!this.form.sport) return;
-            const now = new Date();
-            this.form.start_time = pad(now.getHours()) + ':' + pad(now.getMinutes());
-        },
-
-        addPlayer(teamIndex) {
-            this.form.teams[teamIndex].players.push(emptyPlayer());
-        },
-
-        removePlayer(teamIndex, playerIndex) {
-            this.form.teams[teamIndex].players.splice(playerIndex, 1);
+            this.form.home_team_id = null;
+            this.form.away_team_id = null;
         },
 
         resetForm() {
-            this.form = this.getEmptyForm();
+            this.form = this.emptyForm();
             this.errors = {};
             this.submitError = null;
             this.submitSuccess = null;
@@ -285,10 +224,8 @@ export default {
 
         validate() {
             const errs = {};
-
-            if (!this.form.organizer.trim()) errs.organizer = 'El organizador es obligatorio';
-            if (!this.form.sport) errs.sport = 'Selecciona un deporte';
-
+            if (!this.form.organizer) errs.organizer = 'El organizador es obligatorio';
+            if (!this.form.sport)     errs.sport = 'Selecciona un deporte';
             if (!this.form.event_date) {
                 errs.event_date = 'Selecciona la fecha del evento';
             } else {
@@ -296,41 +233,39 @@ export default {
                 const tomorrow = new Date();
                 tomorrow.setDate(tomorrow.getDate() + 1);
                 tomorrow.setHours(0, 0, 0, 0);
-                if (d < tomorrow) {
-                    errs.event_date = 'El evento debe programarse con al menos un día de antelación';
-                }
+                if (d < tomorrow) errs.event_date = 'El evento debe programarse con al menos un día de antelación';
             }
-
-            if (!this.form.start_time) {
-                errs.start_time = 'Selecciona la hora de inicio';
-            }
-
-            if (!this.form.location.trim()) errs.location = 'La ubicación es obligatoria';
+            if (!this.form.start_time)    errs.start_time = 'Selecciona la hora de inicio';
+            if (!this.form.location)      errs.location = 'La ubicación es obligatoria';
             if (!this.form.total_tickets || this.form.total_tickets < 1) errs.total_tickets = 'Debe haber al menos 1 boleto';
             if (this.form.ticket_price < 0) errs.ticket_price = 'El precio no puede ser negativo';
-
-            const homeTeams = this.form.teams.filter(t => t.is_home);
-            if (homeTeams.length !== 1) errs.teams = 'Selecciona qué equipo es el local';
-
-            const names = this.form.teams.map(t => t.name.trim());
-            if (!names[0]) errs.team_names = 'El equipo local necesita nombre';
-            else if (!names[1]) errs.team_names = 'El equipo visitante necesita nombre';
-            else if (names[0] === names[1]) errs.team_names = 'Los equipos deben tener nombres distintos';
-
+            if (!this.form.home_team_id)  errs.home_team_id = 'Selecciona el equipo local';
+            if (!this.form.away_team_id)  errs.away_team_id = 'Selecciona el equipo visitante';
             this.errors = errs;
             return Object.keys(errs).length === 0;
         },
 
         async submitEvent() {
             if (this.submitting) return;
+            if (!this.validate()) return;
+            this.submitting = true;
+            this.submitError = null;
+            this.submitSuccess = null;
             try {
-                if (!this.validate()) return;
-                this.submitting = true;
-                this.submitError = null;
-                this.submitSuccess = null;
-
-                const payload = this.buildPayload();
-                await api.post('/events', payload);
+                const startISO = new Date(this.form.event_date + 'T' + this.form.start_time).toISOString();
+                await api.post('/events', {
+                    organizer:     this.form.organizer.trim(),
+                    sport:         this.form.sport,
+                    description:   this.form.description.trim(),
+                    event_date:    this.form.event_date,
+                    start_time:    startISO,
+                    end_time:      startISO,
+                    location:      this.form.location.trim(),
+                    total_tickets: Number(this.form.total_tickets),
+                    ticket_price:  Number(this.form.ticket_price),
+                    home_team_id:  this.form.home_team_id,
+                    away_team_id:  this.form.away_team_id
+                });
                 this.submitSuccess = 'Evento creado exitosamente';
                 this.resetForm();
                 setTimeout(() => { this.submitSuccess = null; }, 4000);
@@ -339,36 +274,6 @@ export default {
             } finally {
                 this.submitting = false;
             }
-        },
-
-        buildPayload() {
-            const startDateTime = new Date(this.form.event_date + 'T' + this.form.start_time);
-            const startISO = startDateTime.toISOString();
-            const statsKey = getStatsPayloadKey(this.form.sport);
-
-            return {
-                organizer: this.form.organizer.trim(),
-                sport: this.form.sport,
-                description: this.form.description.trim(),
-                event_date: this.form.event_date,
-                start_time: startISO,
-                end_time: startISO,
-                location: this.form.location.trim(),
-                total_tickets: Number(this.form.total_tickets),
-                ticket_price: Number(this.form.ticket_price),
-                teams: this.form.teams.map(t => ({
-                    name: t.name.trim(),
-                    is_home: t.is_home,
-                    score: 0,
-                    players: t.players.map(p => ({
-                        name: p.name.trim(),
-                        jersey_number: Number(p.jersey_number),
-                        position: p.position,
-                        is_starter: p.is_starter,
-                        [statsKey]: getDefaultStats(this.form.sport)
-                    }))
-                }))
-            };
         }
     }
 };

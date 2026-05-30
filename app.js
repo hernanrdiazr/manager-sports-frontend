@@ -1,7 +1,10 @@
 import { authService } from './services/authService.js';
+import { initDatabase } from './services/database.js';
+import { checkStoredHandle, requestPermissionAndRead, pickExistingFile, createNewFile } from './services/fileStorage.js';
 import navbar from './components/navbar.js';
 import MainLayout from './layout/MainLayout.js';
 import Admin from './views/admin/admin.js';
+import User from './views/user/user.js';
 import Login from './views/global/auth/login.js';
 import Register from './views/global/auth/register.js';
 import HomeView from './views/global/home.js';
@@ -42,13 +45,18 @@ const routes = [
         component: Admin,
         meta: { requiresAuth: true, requiresAdmin: true }
     },
-    { 
-        path: '/login', 
+    {
+        path: '/dashboard',
+        component: User,
+        meta: { requiresAuth: true }
+    },
+    {
+        path: '/login',
         component: Login,
         meta: { guest: true }
     },
-    { 
-        path: '/register', 
+    {
+        path: '/register',
         component: Register,
         meta: { guest: true }
     }
@@ -74,10 +82,12 @@ router.beforeEach((to, from, next) => {
     // Rutas protegidas
     if (to.matched.some(record => record.meta.requiresAuth)) {
         if (!isAuthenticated) {
-            next('/login/admin');
+            // Admin routes redirect to admin login, user routes to user login
+            const needsAdmin = to.matched.some(record => record.meta.requiresAdmin);
+            next(needsAdmin ? '/login/admin' : '/login');
             return;
         }
-        
+
         if (to.matched.some(record => record.meta.requiresAdmin)) {
             if (!currentUser || currentUser.role !== 'admin') {
                 authService.logout();
@@ -86,11 +96,11 @@ router.beforeEach((to, from, next) => {
             }
         }
     }
-    
-    // Rutas para invitados
+
+    // Rutas para invitados: redirigir según rol
     if (to.matched.some(record => record.meta.guest)) {
         if (isAuthenticated) {
-            next('/admin');
+            next(currentUser?.role === 'admin' ? '/admin' : '/dashboard');
             return;
         }
     }
@@ -184,5 +194,97 @@ app.component('calendar', calendar);
 app.component('hamburger', hamburger);
 app.component('close-hamburger', closeHamburger);
 
-app.use(router);
-app.mount('#app');
+// === DB Setup ===
+async function setupDb() {
+    const setupEl   = document.getElementById('db-setup');
+    const statusMsg = document.getElementById('db-status-msg');
+    const buttonsEl = document.getElementById('db-buttons');
+    const continueEl = document.getElementById('db-continue');
+    const filenameEl = document.getElementById('db-filename');
+    const loadingEl = document.getElementById('db-loading');
+    const errorEl   = document.getElementById('db-error');
+    const btnOpen   = document.getElementById('btn-open-db');
+    const btnNew    = document.getElementById('btn-new-db');
+    const btnCont   = document.getElementById('btn-continue');
+    const btnOther  = document.getElementById('btn-pick-other');
+
+    function showError(msg) {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+    }
+
+    function showLoading(show) {
+        loadingEl.style.display = show ? 'block' : 'none';
+        buttonsEl.style.display = show ? 'none' : '';
+        continueEl.style.display = show ? 'none' : '';
+    }
+
+    async function launchApp(fileData, isNew) {
+        showLoading(true);
+        statusMsg.textContent = 'Cargando base de datos…';
+        await initDatabase(fileData, isNew);
+        setupEl.style.display = 'none';
+        app.use(router);
+        app.mount('#app');
+    }
+
+    // Chequear si hay handle guardado
+    const stored = await checkStoredHandle();
+
+    if (stored) {
+        buttonsEl.style.display = 'none';
+        continueEl.style.display = 'block';
+        filenameEl.textContent = stored.filename;
+
+        // Si ya tiene permiso, cargar automáticamente
+        if (stored.hasPermission) {
+            try {
+                const file = await stored.handle.getFile();
+                const data = file.size > 0 ? new Uint8Array(await file.arrayBuffer()) : null;
+                await launchApp(data, false);
+                return;
+            } catch {
+                // Permiso caducó, pedir de nuevo
+            }
+        }
+
+        btnCont.addEventListener('click', async () => {
+            errorEl.style.display = 'none';
+            try {
+                const data = await requestPermissionAndRead(stored.handle);
+                await launchApp(data, false);
+            } catch (e) {
+                if (e.name !== 'AbortError') showError(e.message);
+            }
+        });
+
+        btnOther.addEventListener('click', () => {
+            continueEl.style.display = 'none';
+            buttonsEl.style.display = 'block';
+            statusMsg.textContent = 'Selecciona o crea un archivo de base de datos para continuar.';
+            errorEl.style.display = 'none';
+        });
+    }
+
+    btnOpen.addEventListener('click', async () => {
+        errorEl.style.display = 'none';
+        try {
+            const { data } = await pickExistingFile();
+            await launchApp(data, false);
+        } catch (e) {
+            if (e.name !== 'AbortError') showError(e.message);
+        }
+    });
+
+    btnNew.addEventListener('click', async () => {
+        errorEl.style.display = 'none';
+        try {
+            await createNewFile();
+            await launchApp(null, true);
+        } catch (e) {
+            if (e.name !== 'AbortError') showError(e.message);
+        }
+    });
+}
+
+setupDb();

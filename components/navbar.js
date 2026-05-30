@@ -22,12 +22,12 @@ export default {
         </nav>
 
         <div class="hidden min-[1200px]:flex items-center gap-3">
-          <a href="#" class="text-slate-400 hover:text-white text-sm transition-colors" style="font-weight: 500">
+          <router-link to="/login" class="text-slate-400 hover:text-white text-sm transition-colors" style="font-weight: 500">
             Iniciar sesión
-          </a>
-          <button class="bg-[#2563EB] text-white px-5 py-2 rounded-full text-sm hover:bg-[#1d4ed8] transition-all duration-200" style="font-weight: 600">
+          </router-link>
+          <router-link to="/register" class="bg-[#2563EB] text-white px-5 py-2 rounded-full text-sm hover:bg-[#1d4ed8] transition-all duration-200" style="font-weight: 600">
             Registrarse
-          </button>
+          </router-link>
         </div>
 
         <!-- Mobile Menu Button -->
@@ -43,8 +43,8 @@ export default {
           {{ item }}
         </a>
         <div class="pt-2 flex flex-col gap-3">
-          <a href="#" class="text-slate-400 text-sm text-center" style="font-weight: 500">Iniciar sesión</a>
-          <button class="bg-[#2563EB] text-white py-2 rounded-full text-sm" style="font-weight: 600">Registrarse</button>
+          <router-link to="/login" class="text-slate-400 text-sm text-center" style="font-weight: 500">Iniciar sesión</router-link>
+          <router-link to="/register" class="bg-[#2563EB] text-white py-2 rounded-full text-sm text-center" style="font-weight: 600">Registrarse</router-link>
         </div>
       </div>
     </header>

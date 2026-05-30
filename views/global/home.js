@@ -180,7 +180,7 @@ export default {
       this.menuOpen = !this.menuOpen;
     },
     test() {
-      alert("¡Registro iniciado!");
+      this.$router.push('/register');
     }
   }
 };
