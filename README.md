@@ -43,11 +43,23 @@ Luego accede a `http://localhost:8080` en tu navegador.
 
 ---
 
-## 💻 Compatibilidad y Navegadores (Soporte Windows 7)
-El sistema se ejecuta en el lado del cliente (navegador), por lo que es compatible incluso con sistemas antiguos como **Windows 7**, siempre que se use una versión de navegador que soporte WebAssembly y OPFS:
-* **Google Chrome:** Versión 102 o superior (la última versión compatible con Windows 7 es la 109, la cual es 100% compatible).
-* **Mozilla Firefox:** Versión 111 o superior (la versión de largo soporte Firefox 115 ESR compatible con Windows 7 funciona perfectamente).
-* **Microsoft Edge:** Versión 102 o superior.
+## 💻 Compatibilidad y Navegadores (Guía Rápida para Windows 7)
+
+Dado que la aplicación corre completamente en el lado del cliente (navegador) sin Node.js, es **100% compatible con Windows 7** siempre y cuando cumplas los siguientes 3 requisitos fundamentales:
+
+### 1. Usar un Navegador Compatible (Límite de Windows 7)
+Dado que Windows 7 no recibe actualizaciones de navegadores modernos recientes, debes instalar y usar uno de los siguientes:
+* **Google Chrome 109 (Recomendado):** Es la última versión oficial de Chrome compatible con Windows 7. Soporta WebAssembly y OPFS (Origin Private File System) mediante Workers perfectamente.
+* **Mozilla Firefox 115 ESR (Extended Support Release):** Es la versión de soporte extendido para Windows 7 de Firefox. Es completamente compatible con todo el motor de base de datos SQLite WASM.
+* **Microsoft Edge 109:** La última versión de Edge compatible con Windows 7.
+* **❌ IMPORTANTE:** Navegadores obsoletos como Internet Explorer, o versiones antiguas de Chrome/Firefox por debajo de la versión 102, **no funcionarán** (el sistema alertará del error y no cargará).
+
+### 2. Acceder mediante IP en lugar de nombre (Recomendación de Red)
+En Windows 7, la resolución del nombre `localhost` en el archivo de hosts a veces está inhabilitada o mal configurada.
+* **Consejo de oro:** Accede a la aplicación usando la dirección IP local de loopback: **`http://127.0.0.1:8080`** (reemplazando `8080` por el puerto que indique Mongoose o tu servidor local). Esto evita retrasos y fallos de resolución de DNS local.
+
+### 3. Verificar que el Servidor Local Esté Iniciado
+* Asegúrate de que `mongoose.exe` esté abierto y muestre su ventana de consola en segundo plano. Si por algún motivo de seguridad de Windows 7 (como Windows Defender o falta de permisos) el binario `.exe` se bloquea, recuerda que puedes usar alternativas como **Live Server** de VS Code o **Python** (`python -m http.server 8080`).
 
 ---
 
