@@ -219,10 +219,21 @@
     <!-- Registrar Service Worker para COOP/COEP (Requerido por SQLite WASM) -->
     <script>
         if ('serviceWorker' in navigator) {
+            // Detectar si la página ya está controlada al cargar
+            const hadController = !!navigator.serviceWorker.controller;
+
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
                         console.log('✅ Service Worker registrado con éxito:', reg.scope);
+
+                        // Si no estaba controlada, esperamos a que el SW tome el control y recargamos
+                        if (!hadController) {
+                            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                                console.log('🔄 Service Worker activado y reclamando control. Recargando página...');
+                                window.location.reload();
+                            });
+                        }
                     })
                     .catch(err => {
                         console.error('❌ Error al registrar Service Worker:', err);

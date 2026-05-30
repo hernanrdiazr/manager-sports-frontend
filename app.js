@@ -143,13 +143,49 @@ const app = Vue.createApp({
             this.showLoader = true;
             this.loaderMessage = 'Verificando acceso...';
             
-            // Simular verificación
-            await new Promise(resolve => setTimeout(resolve, 600));
-            
-            this.isAuthenticated = authService.isAuthenticated();
-            this.currentUser = authService.getCurrentUser();
-            
-            this.showLoader = false;
+            try {
+                // Inicializar base de datos proactivamente al arrancar la aplicación
+                const { initDb } = await import('./services/db/database.js');
+                await initDb();
+            } catch (error) {
+                console.error("❌ Error al inicializar base de datos en el arranque:", error);
+                
+                // Mostrar alerta descriptiva usando SweetAlert
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de Base de Datos Local',
+                        html: `
+                            <div class="text-left font-sans px-2">
+                                <p class="text-sm text-slate-600 mb-4">No se pudo conectar con la base de datos local SQLite (OPFS).</p>
+                                <p class="text-xs text-red-600 bg-red-50 border border-red-100 rounded-xl p-3 font-mono overflow-y-auto max-h-36 mb-4">
+                                    ${error.message || error}
+                                </p>
+                                <p class="text-xs text-slate-500 font-semibold">Sugerencias:</p>
+                                <ul class="list-disc pl-5 text-xs text-slate-500 space-y-1 mt-1">
+                                    <li>Recarga la página para activar el Service Worker de aislamiento.</li>
+                                    <li>Verifica que estás accediendo desde un servidor local (localhost) o HTTPS seguro.</li>
+                                    <li>Asegúrate de que tu navegador sea moderno (Chrome 109+, Firefox 115+).</li>
+                                </ul>
+                            </div>
+                        `,
+                        confirmButtonText: '🔄 Recargar Aplicación',
+                        allowOutsideClick: false,
+                        buttonsStyling: false,
+                        customClass: {
+                            confirmButton: 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white px-6 py-3 rounded-full text-xs font-black uppercase tracking-widest cursor-pointer shadow-md'
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.reload();
+                        }
+                    });
+                }
+            } finally {
+                this.isAuthenticated = authService.isAuthenticated();
+                this.currentUser = authService.getCurrentUser();
+                this.showLoader = false;
+            }
         },
         
         updateLoaderMessage() {

@@ -26,6 +26,14 @@ self.addEventListener('fetch', (event) => {
         newHeaders.set('Cross-Origin-Opener-Policy', 'same-origin');
         newHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp');
 
+        // Asegurar que archivos WASM y JS/MJS tengan el tipo MIME correcto
+        const urlPath = event.request.url.split('?')[0].split('#')[0];
+        if (urlPath.endsWith('.wasm')) {
+          newHeaders.set('content-type', 'application/wasm');
+        } else if (urlPath.endsWith('.js') || urlPath.endsWith('.mjs')) {
+          newHeaders.set('content-type', 'text/javascript');
+        }
+
         // Para evitar problemas con recursos externos (como Leaflet o Tailwind CDN),
         // permitimos Cross-Origin Resource Sharing si no está ya configurado
         if (event.request.url.includes('unpkg.com') || event.request.url.includes('cdn.jsdelivr.net') || event.request.url.includes('fonts.googleapis.com')) {

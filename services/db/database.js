@@ -1,6 +1,6 @@
 // services/db/database.js - Conector y manejador de base de datos SQLite WASM + OPFS
 
-import sqlite3Worker1Promiser from './sqlite3/sqlite3-worker1-promiser.mjs';
+import sqlite3Worker1Promiser from './sqlite3/sqlite3-worker1-promiser-esm.js';
 import { SCHEMA_SQL } from './schema.js';
 import { seedDatabase } from './seed.js';
 
@@ -18,14 +18,31 @@ export async function initDb() {
         try {
             console.log("⚡ [SQLite] Inicializando SQLite WASM local...");
 
+            // Verificar aislamiento de origen cruzado requerido por OPFS/SharedArrayBuffer en navegadores
+            if (typeof window !== 'undefined' && !window.crossOriginIsolated) {
+                console.warn("⚠️ [SQLite] La página no es 'crossOriginIsolated'.");
+                if ('serviceWorker' in navigator && !navigator.serviceWorker.controller) {
+                    throw new Error("El Service Worker aún no controla la página. Por favor, recarga la aplicación para activar el almacenamiento local.");
+                } else {
+                    throw new Error("El aislamiento de origen cruzado (COOP/COEP) no está activo. Verifique que el Service Worker esté funcionando correctamente.");
+                }
+            }
+
             // Instanciar el promiser apuntando al worker no-module local para máxima compatibilidad.
-            // Especificamos explícitamente el worker pasándole un objeto Worker
-            dbPromiser = await sqlite3Worker1Promiser({
+            // Especificamos explícitamente el worker pasándole un objeto Worker.
+            // Envolvemos la inicialización en un timeout de 4 segundos para evitar cuelgues permanentes.
+            const promiserPromise = sqlite3Worker1Promiser({
                 worker: () => {
                     const workerUrl = new URL('./sqlite3/sqlite3-worker1.js', import.meta.url);
                     return new Worker(workerUrl);
                 }
             });
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Tiempo de espera agotado al conectar con el worker de SQLite. Verifique que el Service Worker esté activo y las cabeceras COOP/COEP inyectadas.")), 4000)
+            );
+
+            dbPromiser = await Promise.race([promiserPromise, timeoutPromise]);
 
             console.log("💾 [SQLite] Abriendo base de datos persistente en OPFS...");
 
