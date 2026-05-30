@@ -74,12 +74,23 @@ class ApiService {
             if (path === '/admin/stats') {
                 const totalUsers = await selectOne("SELECT count(*) as count FROM users;");
                 const totalEvents = await selectOne("SELECT count(*) as count FROM events WHERE status != 'cancelado';");
-                const totalTickets = await selectOne("SELECT sum(ticket_count) as sum FROM reservations WHERE status = 'aprobado';");
                 
-                // Ingresos mensuales de reservas aprobadas del mes actual
+                // Entradas totales de reservas aprobadas para eventos no cancelados
+                const totalTickets = await selectOne(`
+                    SELECT sum(r.ticket_count) as sum 
+                    FROM reservations r
+                    JOIN events e ON r.event_id = e.id
+                    WHERE r.status = 'aprobado' AND e.status != 'cancelado';
+                `);
+                
+                // Ingresos mensuales de reservas aprobadas del mes actual para eventos no cancelados
                 const monthlyRevenue = await selectOne(`
-                    SELECT sum(total_price) as sum FROM reservations 
-                    WHERE status = 'aprobado';
+                    SELECT sum(r.total_price) as sum 
+                    FROM reservations r
+                    JOIN events e ON r.event_id = e.id
+                    WHERE r.status = 'aprobado' 
+                      AND e.status != 'cancelado'
+                      AND strftime('%Y-%m', r.created_at) = strftime('%Y-%m', 'now');
                 `);
 
                 return {
