@@ -37,10 +37,12 @@ self.addEventListener('fetch', (event) => {
           newHeaders.set('content-type', 'text/javascript');
         }
 
-        return new Response(response.body, {
-          status: response.status,
-          statusText: response.statusText,
-          headers: newHeaders
+        return response.blob().then((blob) => {
+          return new Response(blob, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: newHeaders
+          });
         });
       })
       .catch((err) => {
