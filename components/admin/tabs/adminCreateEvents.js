@@ -110,24 +110,28 @@ export default {
                     <p v-else-if="filteredTeams.length === 0" class="text-xs text-amber-600 mb-4">
                         No hay equipos de {{ sportLabel(form.sport) }}. <span class="font-medium">Ve a la sección «Equipos» para crear uno.</span>
                     </p>
-                    <p v-else class="text-xs text-slate-400 mb-4">{{ filteredTeams.length }} equipo(s) disponibles para {{ sportLabel(form.sport) }}.</p>
+                    <p v-else class="text-xs text-slate-400 mb-1">{{ selectableTeams.length }} de {{ filteredTeams.length }} equipo(s) de {{ sportLabel(form.sport) }} están completos y disponibles.</p>
+                    <p v-if="form.sport && incompleteTeams.length" class="flex items-start gap-1.5 text-xs text-amber-600 mb-4">
+                        <svg class="w-4 h-4 flex-shrink-0 mt-px" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                        <span>{{ incompleteTeams.length }} equipo(s) no aparecen por no cumplir el mínimo/máximo de jugadores: {{ incompleteTeams.map(t => t.name).join(', ') }}.</span>
+                    </p>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                             <label class="text-xs font-medium text-slate-600">Equipo local *</label>
-                            <select v-model.number="form.home_team_id" :disabled="filteredTeams.length === 0"
+                            <select v-model.number="form.home_team_id" :disabled="selectableTeams.length === 0"
                                     :class="inputClass('home_team_id')" @change="errors.home_team_id = null">
                                 <option :value="null" disabled>Seleccionar…</option>
-                                <option v-for="t in filteredTeams" :key="t.id" :value="t.id">{{ t.name }}</option>
+                                <option v-for="t in selectableTeams" :key="t.id" :value="t.id">{{ t.name }}</option>
                             </select>
                             <p v-if="errors.home_team_id" class="text-xs text-red-500 mt-1">{{ errors.home_team_id }}</p>
                         </div>
                         <div>
                             <label class="text-xs font-medium text-slate-600">Equipo visitante *</label>
-                            <select v-model.number="form.away_team_id" :disabled="filteredTeams.length === 0"
+                            <select v-model.number="form.away_team_id" :disabled="selectableTeams.length === 0"
                                     :class="inputClass('away_team_id')" @change="errors.away_team_id = null">
                                 <option :value="null" disabled>Seleccionar…</option>
-                                <option v-for="t in filteredTeams.filter(t => t.id !== form.home_team_id)" :key="t.id" :value="t.id">{{ t.name }}</option>
+                                <option v-for="t in selectableTeams.filter(t => t.id !== form.home_team_id)" :key="t.id" :value="t.id">{{ t.name }}</option>
                             </select>
                             <p v-if="errors.away_team_id" class="text-xs text-red-500 mt-1">{{ errors.away_team_id }}</p>
                         </div>
@@ -175,6 +179,13 @@ export default {
         filteredTeams() {
             if (!this.form.sport) return [];
             return this.allTeams.filter(t => t.sport === this.form.sport);
+        },
+        // Solo los equipos completos (cumplen mín/máx de jugadores) pueden elegirse.
+        selectableTeams() {
+            return this.filteredTeams.filter(t => t.is_complete);
+        },
+        incompleteTeams() {
+            return this.filteredTeams.filter(t => !t.is_complete);
         },
         todayStr() {
             const d = new Date();

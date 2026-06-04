@@ -65,16 +65,49 @@ export function getAdminStats() {
     return { totalUsers, totalEvents, totalTickets, monthlyRevenue };
 }
 
+// === Sports config ===
+
+export function getSports() {
+    return query('SELECT id, code, name, min_players, max_players FROM sports ORDER BY id');
+}
+
 // === Teams ===
 
 export function getTeams() {
+    // Une con sports para exponer los límites por deporte y marcar si el equipo
+    // está completo (cumple el mínimo y no excede el máximo de jugadores).
     return query(`
-        SELECT t.id, t.name, t.sport, COUNT(p.id) AS player_count
+        SELECT t.id, t.name, t.sport, COUNT(p.id) AS player_count,
+               COALESCE(s.min_players, 1)   AS min_players,
+               COALESCE(s.max_players, 100) AS max_players,
+               CASE WHEN COUNT(p.id) >= COALESCE(s.min_players, 1)
+                     AND COUNT(p.id) <= COALESCE(s.max_players, 100)
+                    THEN 1 ELSE 0 END AS is_complete
         FROM teams t
         LEFT JOIN players p ON p.team_id = t.id
+        LEFT JOIN sports s ON s.code = t.sport
         GROUP BY t.id
         ORDER BY t.name
     `);
+}
+
+// Lanza un error si el equipo no cumple el rango de jugadores de su deporte.
+function assertTeamComplete(teamId) {
+    const t = queryOne(`
+        SELECT t.name, COUNT(p.id) AS player_count,
+               COALESCE(s.min_players, 1)   AS min_players,
+               COALESCE(s.max_players, 100) AS max_players
+        FROM teams t
+        LEFT JOIN players p ON p.team_id = t.id
+        LEFT JOIN sports s ON s.code = t.sport
+        WHERE t.id = ?
+        GROUP BY t.id
+    `, [teamId]);
+    if (!t) throw new Error('Equipo no encontrado');
+    if (t.player_count < t.min_players)
+        throw new Error(`El equipo "${t.name}" no está completo: tiene ${t.player_count} jugador(es) y requiere al menos ${t.min_players}.`);
+    if (t.player_count > t.max_players)
+        throw new Error(`El equipo "${t.name}" excede el máximo de ${t.max_players} jugadores permitidos.`);
 }
 
 export async function createTeam({ name, sport }) {
@@ -153,6 +186,10 @@ export async function createEvent(payload) {
 
     if (!home_team_id || !away_team_id) throw new Error('Debes seleccionar ambos equipos');
     if (home_team_id === away_team_id) throw new Error('El equipo local y visitante deben ser diferentes');
+
+    // Ambos equipos deben cumplir el mínimo/máximo de jugadores de su deporte.
+    assertTeamComplete(home_team_id);
+    assertTeamComplete(away_team_id);
 
     run(
         `INSERT INTO events (name, description, sport, event_date, start_time, end_time, location,
@@ -267,6 +304,15 @@ export async function updateScore(eventId, { home_score, away_score }) {
 
 export async function registerPlayer(teamId, sport, payload) {
     const { name, jersey_number, position, is_starter } = payload;
+
+    // Validar el máximo de jugadores permitido para el deporte del equipo.
+    const team = queryOne('SELECT sport FROM teams WHERE id = ?', [teamId]);
+    if (!team) throw new Error('Equipo no encontrado');
+    const limits = queryOne('SELECT max_players FROM sports WHERE code = ?', [team.sport]);
+    const maxPlayers = limits?.max_players ?? 100;
+    const current = queryOne('SELECT COUNT(*) AS c FROM players WHERE team_id = ?', [teamId]).c;
+    if (current >= maxPlayers)
+        throw new Error(`Este equipo ya alcanzó el máximo de ${maxPlayers} jugadores permitidos para su deporte.`);
 
     // Find which event this team belongs to
     const event = queryOne(

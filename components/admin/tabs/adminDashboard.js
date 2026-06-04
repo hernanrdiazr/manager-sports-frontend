@@ -144,9 +144,9 @@ export default {
                 <div class="flex flex-col items-start gap-1">
 
                     <!-- Capacidad -->
-                    <div class="w-full flex flex-col items-center">
+                    <span class="text-gray-800">🎟️ Capacidad total</span>
+                    <div class="flex flex-col items-center transition-all duration-500" :style="{ width: funnelWidths.capacidad }">
                         <div class="w-full bg-[#2563EB] rounded-xl py-3 px-4 flex items-center justify-between text-white text-sm font-medium">
-                            <span>🎟️ Capacidad total</span>
                             <span class="font-bold text-base">{{ funnel.capacidad.toLocaleString('es-ES') }}</span>
                         </div>
                     </div>
@@ -155,12 +155,11 @@ export default {
                     <div class="w-0 h-0" style="border-left:18px solid transparent;border-right:18px solid transparent;border-top:10px solid #2563EB;opacity:0.3"></div>
 
                     <!-- Reservaciones -->
+                    <span class="text-gray-800">📋 Reservaciones</span><span class="text-xs ml-2 opacity-80">({{ funnelPct(funnel.reservaciones, funnel.capacidad) }}%)</span>
                     <div class="flex flex-col items-center transition-all duration-500" :style="{ width: funnelWidths.reservaciones }">
-                        <div class="w-full bg-[#06B6D4] rounded-xl py-3 px-4 flex items-center justify-between text-sm font-medium" :class="funnelTextClass.reservaciones">
-                            <span>📋 Reservaciones</span>
+                        <div class="w-full bg-[#06B6D4] rounded-xl py-3 px-4 flex items-center justify-between text-sm font-medium">
                             <div class="text-right">
                                 <span class="font-bold text-base">{{ funnel.reservaciones.toLocaleString('es-ES') }}</span>
-                                <span class="text-xs ml-2 opacity-80">({{ funnelPct(funnel.reservaciones, funnel.capacidad) }}%)</span>
                             </div>
                         </div>
                     </div>
@@ -169,12 +168,12 @@ export default {
                     <div class="w-0 h-0" style="border-left:18px solid transparent;border-right:18px solid transparent;border-top:10px solid #06B6D4;opacity:0.3"></div>
 
                     <!-- Confirmados/Pagados -->
+                    <span class="text-gray-800">✅ Confirmados</span><span class="text-xs ml-2 opacity-80">({{ funnelPct(funnel.confirmados, funnel.capacidad) }}%)</span>
                     <div class="flex flex-col items-center transition-all duration-500" :style="{ width: funnelWidths.confirmados }">
-                        <div class="w-full bg-green-500 rounded-xl py-3 px-4 flex items-center justify-between text-sm font-medium" :class="funnelTextClass.confirmados">
-                            <span>✅ Confirmados</span>
+                        <div class="w-full bg-green-500 rounded-xl py-3 px-4 flex items-center justify-between text-sm font-medium"">
                             <div class="text-right">
                                 <span class="font-bold text-base">{{ funnel.confirmados.toLocaleString('es-ES') }}</span>
-                                <span class="text-xs ml-2 opacity-80">({{ funnelPct(funnel.confirmados, funnel.capacidad) }}%)</span>
+                                
                             </div>
                         </div>
                     </div>
@@ -302,7 +301,7 @@ export default {
 
     computed: {
         funnelWidths() {
-            const cap = this.funnel.capacidad || 1;
+            const cap = Math.max(Math.round((this.funnel.capacidad) * 100), this.funnel.capacidad > 0 ? 5 : 0);
             const resPct  = Math.max(Math.round((this.funnel.reservaciones / cap) * 100), this.funnel.reservaciones > 0 ? 5 : 0);
             const confPct = Math.max(Math.round((this.funnel.confirmados   / cap) * 100), this.funnel.confirmados  > 0 ? 5 : 0);
             return {
@@ -320,14 +319,6 @@ export default {
                 groups[e.event_date].push(e);
             });
             return Object.entries(groups).map(([date, events]) => ({ date, events }));
-        },
-
-        funnelTextClass() {
-            // Si el ancho es menor a 30%, el texto pasa a oscuro para ser legible
-            return {
-                reservaciones: this.funnelWidths.resPct  < 30 ? 'text-gray-800' : 'text-white',
-                confirmados:   this.funnelWidths.confPct < 30 ? 'text-gray-800' : 'text-white'
-            };
         },
 
         statsCards() {

@@ -5,6 +5,14 @@ let _db = null;
 const SCHEMA = `
 PRAGMA foreign_keys = ON;
 
+CREATE TABLE IF NOT EXISTS sports (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    min_players INTEGER NOT NULL DEFAULT 1,
+    max_players INTEGER NOT NULL DEFAULT 100
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -206,6 +214,27 @@ CREATE TABLE IF NOT EXISTS reservations (
 );
 `;
 
+// Parámetros por deporte (mínimo/máximo de jugadores por equipo).
+// La tabla sports es reutilizable para otras configuraciones futuras.
+const SPORTS_SEED = [
+    ['futbol',     'Fútbol',     11, 23],
+    ['beisbol',    'Béisbol',     9, 25],
+    ['basquetbol', 'Básquetbol',  5, 15],
+    ['otro',       'Otro',        1, 50]
+];
+
+// Se ejecuta en cada arranque con INSERT OR IGNORE: garantiza que la tabla
+// sports exista poblada incluso en bases de datos creadas antes de esta función,
+// sin sobrescribir valores que el admin pudiera haber ajustado.
+function seedSports() {
+    SPORTS_SEED.forEach(([code, name, min, max]) => {
+        _db.run(
+            `INSERT OR IGNORE INTO sports (code, name, min_players, max_players) VALUES (?, ?, ?, ?)`,
+            [code, name, min, max]
+        );
+    });
+}
+
 function seedDatabase() {
     _db.run(
         `INSERT OR IGNORE INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)`,
@@ -224,6 +253,7 @@ export async function initDatabase(fileData, isNew) {
 
     _db.run('PRAGMA foreign_keys = ON;');
     _db.run(SCHEMA);
+    seedSports();
 
     if (isNew) {
         seedDatabase();

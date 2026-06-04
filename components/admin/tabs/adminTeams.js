@@ -27,13 +27,33 @@ export default {
                     </div>
                     <div>
                         <h2 class="text-xl font-bold text-gray-900">{{ selectedTeam.name }}</h2>
-                        <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">{{ sportLabel(selectedTeam.sport) }}</span>
+                        <div class="flex flex-wrap items-center gap-1.5 mt-0.5">
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">{{ sportLabel(selectedTeam.sport) }}</span>
+                            <span class="text-xs px-2 py-0.5 rounded-full"
+                                  :class="rosterComplete ? 'bg-green-50 text-green-600' : 'bg-amber-50 text-amber-600'">
+                                {{ teamPlayers.length }} / {{ selectedTeam.min_players }}–{{ selectedTeam.max_players }} jugadores
+                            </span>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Aviso de equipo incompleto -->
+                <div v-if="!rosterComplete" class="flex items-start gap-2 bg-amber-50 border border-amber-100 text-amber-700 rounded-xl px-4 py-3 mb-6 text-sm">
+                    <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>{{ completeHint({ player_count: teamPlayers.length, min_players: selectedTeam.min_players, max_players: selectedTeam.max_players }) }} No podrá asignarse a eventos hasta completarse.</span>
                 </div>
 
                 <!-- Formulario agregar jugador -->
                 <div class="bg-slate-50 rounded-2xl border border-slate-100 p-5 mb-6">
-                    <h3 class="text-sm font-semibold text-gray-900 mb-4">Agregar jugador</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-semibold text-gray-900">Agregar jugador</h3>
+                        <span class="text-xs text-slate-400">Máximo {{ selectedTeam.max_players }} jugadores</span>
+                    </div>
+                    <p v-if="atMax" class="text-sm text-amber-600 mb-3">
+                        El equipo alcanzó el máximo de {{ selectedTeam.max_players }} jugadores para {{ sportLabel(selectedTeam.sport) }}. No se pueden agregar más.
+                    </p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <label class="text-xs font-medium text-slate-600">Nombre *</label>
@@ -64,8 +84,8 @@ export default {
                         </div>
                     </div>
                     <div class="mt-4 flex items-center gap-3">
-                        <button @click="addPlayer" :disabled="savingPlayer"
-                                class="bg-[#2563EB] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50">
+                        <button @click="addPlayer" :disabled="savingPlayer || atMax"
+                                class="bg-[#2563EB] text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-[#1d4ed8] disabled:opacity-50 disabled:cursor-not-allowed">
                             {{ savingPlayer ? 'Agregando…' : 'Agregar jugador' }}
                         </button>
                         <p v-if="playerSuccess" class="text-sm text-green-600">{{ playerSuccess }}</p>
@@ -158,7 +178,22 @@ export default {
                                         {{ sportLabel(team.sport) }}
                                     </span>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-slate-500">{{ team.player_count }} jugador(es)</td>
+                                <td class="px-6 py-4 text-sm text-slate-500">
+                                    <div class="flex items-center gap-2">
+                                        <span>{{ team.player_count }} / {{ team.min_players }}–{{ team.max_players }}</span>
+                                        <span v-if="!team.is_complete" class="relative group cursor-help">
+                                            <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                            </svg>
+                                            <span class="hidden group-hover:block absolute z-10 left-1/2 -translate-x-1/2 bottom-full mb-1 w-56 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg shadow-lg leading-snug">
+                                                {{ completeHint(team) }}
+                                            </span>
+                                        </span>
+                                        <svg v-else class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                </td>
                                 <td class="px-6 py-4 text-right">
                                     <button @click="openTeam(team)"
                                             class="px-4 py-2 bg-[#2563EB] text-white text-sm font-medium rounded-xl hover:bg-[#1d4ed8] transition-colors">
@@ -207,6 +242,15 @@ export default {
     computed: {
         positions() {
             return this.selectedTeam ? getPlayerPositions(this.selectedTeam.sport) : [];
+        },
+        atMax() {
+            if (!this.selectedTeam) return false;
+            return this.teamPlayers.length >= this.selectedTeam.max_players;
+        },
+        rosterComplete() {
+            if (!this.selectedTeam) return false;
+            const n = this.teamPlayers.length;
+            return n >= this.selectedTeam.min_players && n <= this.selectedTeam.max_players;
         }
     },
 
@@ -221,6 +265,18 @@ export default {
         },
 
         sportLabel(sport) { return getSportLabel(sport); },
+
+        // Explica por qué un equipo no está completo (faltan o sobran jugadores).
+        completeHint(team) {
+            if (team.player_count < team.min_players) {
+                const faltan = team.min_players - team.player_count;
+                return `Equipo incompleto: tiene ${team.player_count} jugador(es) y requiere al menos ${team.min_players} (faltan ${faltan}).`;
+            }
+            if (team.player_count > team.max_players) {
+                return `Equipo excedido: tiene ${team.player_count} jugadores, el máximo permitido es ${team.max_players}.`;
+            }
+            return 'Equipo completo.';
+        },
 
         positionLabel(value) {
             return this.positions.find(p => p.value === value)?.label || value;
@@ -289,6 +345,10 @@ export default {
 
         validatePlayer() {
             const errs = {};
+            if (this.atMax) {
+                this.playerError = `No se pueden agregar más jugadores (máximo ${this.selectedTeam.max_players}).`;
+                return false;
+            }
             if (!this.newPlayer.name) errs.name = 'El nombre es obligatorio';
             if (!this.newPlayer.jersey_number || this.newPlayer.jersey_number < 1 || this.newPlayer.jersey_number > 99)
                 errs.jersey_number = 'Dorsal entre 1 y 99';

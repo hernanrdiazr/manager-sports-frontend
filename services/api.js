@@ -30,6 +30,9 @@ function dispatch(method, endpoint, body) {
     // Dashboard
     if (method === 'GET' && path === '/admin/stats') return localApi.getAdminStats();
 
+    // Sports config
+    if (method === 'GET' && path === '/sports') return localApi.getSports();
+
     // Teams
     if (method === 'GET'  && path === '/teams') return localApi.getTeams();
     if (method === 'POST' && path === '/teams') return localApi.createTeam(body);
